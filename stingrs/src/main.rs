@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use std::{
+    collections::HashMap,
     env, fs,
     io::{self, Write},
     path,
@@ -7,6 +8,14 @@ use std::{
 
 fn correct_usage_message() {
     println!("Usage: string [script]");
+}
+
+fn is_alpha(a: &u8) -> bool {
+    (b'a'..=b'z').contains(a) || (b'A'..=b'Z').contains(a) || *a == b'_'
+}
+
+fn is_alphanumeric(a: &u8) -> bool {
+    is_alpha(a) || (b'0'..=b'9').contains(a)
 }
 
 fn run_file(file_name: String) {
@@ -27,7 +36,7 @@ fn error_message(line_number: u32, message: &String) {
     println!("[line {}] Error: {}", line_number, message);
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 enum TokenType {
     //Single char tokens
     LeftParen,
@@ -58,23 +67,22 @@ enum TokenType {
     Number,
 
     //keywords
-    And,
-    Class,
-    Else,
-    False,
-    Fun,
-    For,
-    If,
     Nil,
+    True,
+    False,
+    And,
     Or,
-    Print,
-    Return,
+    If,
+    Else,
+    Class,
     Super,
     This,
-    True,
-    Var,
+    For,
     While,
-
+    Fun,
+    Return,
+    Var,
+    Print,
     //Stop token
     #[default]
     Eof,
@@ -83,14 +91,16 @@ enum TokenType {
 #[derive(Debug, Default)]
 struct Token {
     token_type: TokenType,
-    literal: Option<String>,
+    literal: Option<Vec<u8>>,
     line: usize,
 }
 
 impl Token {
     fn to_string(&self) -> String {
-        //return format!("{}, {:?}, {}\n", self.lexeme, self.token_type, self.line);
-        return format!("{:?}\n", self.token_type);
+        if let Some(data) = &self.literal {
+            return format!("{:?}, {:?}, {}", data, self.token_type, self.line);
+        }
+        return format!("{:?}, {:?}, {}", self.literal, self.token_type, self.line);
     }
 }
 
@@ -99,6 +109,25 @@ fn scan(source: &String) -> Vec<Token> {
     let mut current_byte: usize = 0;
     let mut start_byte: usize;
     let mut line: usize = 1;
+
+    let reserved_words: HashMap<&'static str, TokenType> = HashMap::from([
+        ("nil", TokenType::Nil),
+        ("true", TokenType::True),
+        ("false", TokenType::False),
+        ("and", TokenType::And),
+        ("or", TokenType::Or),
+        ("if", TokenType::If),
+        ("else", TokenType::Else),
+        ("class", TokenType::Class),
+        ("super", TokenType::Super),
+        ("this", TokenType::This),
+        ("for", TokenType::For),
+        ("while", TokenType::While),
+        ("fun", TokenType::Fun),
+        ("return", TokenType::Return),
+        ("var", TokenType::Var),
+        ("Print", TokenType::Print),
+    ]);
 
     let mut tokens = vec![];
     loop {
@@ -237,23 +266,69 @@ fn scan(source: &String) -> Vec<Token> {
             }
             b' ' | b'\r' | b'\t' => (),
             b'\n' => line += 1,
-            // b'"' => {
-            //     while source_bytes[current_byte] != b'"' && current_byte < source_bytes.len() {
-            //         current_byte += 1;
-            //         if source_bytes[current_byte] == b'\n' {
-            //             line += 1;
-            //         }
-            //     }
-            //     if current_byte >= source_bytes.len() {
-            //         println!("Error: unterminated string at line {}", line);
-            //         break;
-            //     }
-            //     tokens.push(Token {
-            //         token_type: TokenType::String,
-            //         literal: source_bytes[start:current].clone(),
-            //         line
-            //     })
-            // }
+            b'"' => {
+                current_byte += 1;
+                let started_line = line;
+                while current_byte < source_bytes.len() && source_bytes[current_byte] != b'"' {
+                    if source_bytes[current_byte] == b'\n' {
+                        line += 1;
+                    }
+                    current_byte += 1;
+                }
+                if current_byte >= source_bytes.len() {
+                    println!("Error: unterminated string at line {}", started_line);
+                    break;
+                }
+                tokens.push(Token {
+                    token_type: TokenType::String,
+                    literal: Some(source_bytes[start_byte + 1..current_byte - 1].to_vec()),
+                    line,
+                });
+            }
+            b'0'..=b'9' => {
+                while current_byte < source_bytes.len()
+                    && (b'0'..=b'9').contains(&source_bytes[current_byte])
+                {
+                    current_byte += 1;
+                }
+                if source_bytes[current_byte] == b'.' {
+                    current_byte += 1;
+                    while current_byte < source_bytes.len()
+                        && (b'0'..=b'9').contains(&source_bytes[current_byte])
+                    {
+                        current_byte += 1;
+                    }
+                }
+                tokens.push(Token {
+                    token_type: TokenType::Number,
+                    literal: Some(source_bytes[start_byte..current_byte].to_vec()),
+                    line,
+                });
+                current_byte -= 1; // TODO: this really needs clean up
+            }
+            b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+                while current_byte < source_bytes.len()
+                    && is_alphanumeric(&source_bytes[current_byte])
+                {
+                    current_byte += 1;
+                }
+                let source_as_vec = source_bytes[start_byte..current_byte].to_vec();
+                let word = std::str::from_utf8(&source_as_vec).expect("wtf");
+                if reserved_words.contains_key(word) {
+                    tokens.push(Token {
+                        token_type: reserved_words.get(word).unwrap().clone(),
+                        literal: Some(source_bytes[start_byte..current_byte].to_vec()),
+                        line,
+                    });
+                } else {
+                    tokens.push(Token {
+                        token_type: TokenType::Identifier,
+                        literal: Some(source_bytes[start_byte..current_byte].to_vec()),
+                        line,
+                    });
+                }
+                current_byte -= 1; // TODO: this really needs clean up
+            }
             unknown_token => println!(
                 "Error: unknown token {} at line {}",
                 String::from_utf8(vec![unknown_token]).unwrap(),
@@ -273,7 +348,7 @@ fn scan(source: &String) -> Vec<Token> {
 fn run_program(program: &String) {
     let tokens = scan(program);
     for token in tokens {
-        println!("Token: {:?}", token.token_type);
+        println!("{}", token.to_string());
     }
 }
 
