@@ -42,7 +42,7 @@ enum TokenType {
     Slash,
     Star,
 
-    //one or to char tokens
+    //one or two char tokens
     Bang,
     BangEqual,
     Equal,
@@ -83,42 +83,187 @@ enum TokenType {
 #[derive(Debug, Default)]
 struct Token {
     token_type: TokenType,
-    lexeme: String,
     literal: Option<String>,
     line: usize,
 }
 
 impl Token {
-    // fn token_type(&mut self, ttype: TokenType) {
-    //     self.token_type = ttype;
-    // }
-
     fn to_string(&self) -> String {
-        return format!("{}, {:?}, {}\n", self.lexeme, self.token_type, self.line);
+        //return format!("{}, {:?}, {}\n", self.lexeme, self.token_type, self.line);
+        return format!("{:?}\n", self.token_type);
     }
 }
 
 fn scan(source: &String) -> Vec<Token> {
     let source_bytes = source.as_bytes();
     let mut current_byte: usize = 0;
-    let mut start_byte: usize = 0;
+    let mut start_byte: usize;
     let mut line: usize = 1;
 
     let mut tokens = vec![];
-    // loop {
-    //     if current_byte >= source_bytes.len() {
-    //         break;
-    //     }
-    //     start_byte = current_byte;
-    //
-    //     // match source_bytes[current_byte] {
-    //     //     '(' => tokens.push(Token {TokenType::LeftParen, });
-    //     //
-    //     // }
-    // }
+    loop {
+        if current_byte >= source_bytes.len() {
+            break;
+        }
+        start_byte = current_byte;
+
+        match source_bytes[start_byte] {
+            b'(' => tokens.push(Token {
+                token_type: TokenType::LeftParen,
+                literal: None,
+                line,
+            }),
+            b')' => tokens.push(Token {
+                token_type: TokenType::RightParen,
+                literal: None,
+                line,
+            }),
+            b'{' => tokens.push(Token {
+                token_type: TokenType::LeftBrace,
+                literal: None,
+                line,
+            }),
+            b'}' => tokens.push(Token {
+                token_type: TokenType::RightBrace,
+                literal: None,
+                line,
+            }),
+            b',' => tokens.push(Token {
+                token_type: TokenType::Comma,
+                literal: None,
+                line,
+            }),
+            b'.' => tokens.push(Token {
+                token_type: TokenType::Dot,
+                literal: None,
+                line,
+            }),
+            b'-' => tokens.push(Token {
+                token_type: TokenType::Minus,
+                literal: None,
+                line,
+            }),
+            b'+' => tokens.push(Token {
+                token_type: TokenType::Plus,
+                literal: None,
+                line,
+            }),
+            b';' => tokens.push(Token {
+                token_type: TokenType::Semicolon,
+                literal: None,
+                line,
+            }),
+            b'*' => tokens.push(Token {
+                token_type: TokenType::Star,
+                literal: None,
+                line,
+            }),
+            b'!' => {
+                if source_bytes[current_byte + 1] == b'=' {
+                    tokens.push(Token {
+                        token_type: TokenType::BangEqual,
+                        literal: None,
+                        line,
+                    });
+                    current_byte += 1;
+                } else {
+                    tokens.push(Token {
+                        token_type: TokenType::Bang,
+                        literal: None,
+                        line,
+                    })
+                }
+            }
+            b'=' => {
+                if source_bytes[current_byte + 1] == b'=' {
+                    tokens.push(Token {
+                        token_type: TokenType::EqualEqual,
+                        literal: None,
+                        line,
+                    });
+                    current_byte += 1;
+                } else {
+                    tokens.push(Token {
+                        token_type: TokenType::Equal,
+                        literal: None,
+                        line,
+                    })
+                }
+            }
+            b'>' => {
+                if source_bytes[current_byte + 1] == b'=' {
+                    tokens.push(Token {
+                        token_type: TokenType::GreaterEqual,
+                        literal: None,
+                        line,
+                    });
+                    current_byte += 1;
+                } else {
+                    tokens.push(Token {
+                        token_type: TokenType::Greater,
+                        literal: None,
+                        line,
+                    })
+                }
+            } //TODO: use regex library instead to fix match cases
+            b'<' => {
+                if source_bytes[current_byte + 1] == b'=' {
+                    tokens.push(Token {
+                        token_type: TokenType::LessEqual,
+                        literal: None,
+                        line,
+                    });
+                    current_byte += 1;
+                } else {
+                    tokens.push(Token {
+                        token_type: TokenType::Less,
+                        literal: None,
+                        line,
+                    })
+                }
+            }
+            b'/' => {
+                if source_bytes[current_byte + 1] == b'/' {
+                    while source_bytes[current_byte + 1] != b'\n' {
+                        current_byte += 1;
+                    }
+                } else {
+                    tokens.push(Token {
+                        token_type: TokenType::Less,
+                        literal: None,
+                        line,
+                    })
+                }
+            }
+            b' ' | b'\r' | b'\t' => (),
+            b'\n' => line += 1,
+            // b'"' => {
+            //     while source_bytes[current_byte] != b'"' && current_byte < source_bytes.len() {
+            //         current_byte += 1;
+            //         if source_bytes[current_byte] == b'\n' {
+            //             line += 1;
+            //         }
+            //     }
+            //     if current_byte >= source_bytes.len() {
+            //         println!("Error: unterminated string at line {}", line);
+            //         break;
+            //     }
+            //     tokens.push(Token {
+            //         token_type: TokenType::String,
+            //         literal: source_bytes[start:current].clone(),
+            //         line
+            //     })
+            // }
+            unknown_token => println!(
+                "Error: unknown token {} at line {}",
+                String::from_utf8(vec![unknown_token]).unwrap(),
+                line
+            ),
+        }
+        current_byte += 1;
+    }
     tokens.push(Token {
         token_type: TokenType::Eof,
-        lexeme: String::from(""),
         literal: None,
         line,
     });
@@ -128,11 +273,7 @@ fn scan(source: &String) -> Vec<Token> {
 fn run_program(program: &String) {
     let tokens = scan(program);
     for token in tokens {
-        if let Some(value) = token.literal {
-            println!("literal: {}", value);
-        } else {
-            println!("End of file ({:?})", token.token_type);
-        }
+        println!("Token: {:?}", token.token_type);
     }
 }
 
