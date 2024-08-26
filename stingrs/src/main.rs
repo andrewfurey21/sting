@@ -281,7 +281,7 @@ fn scan(source: &String) -> Vec<Token> {
                 }
                 tokens.push(Token {
                     token_type: TokenType::String,
-                    literal: Some(source_bytes[start_byte + 1..current_byte - 1].to_vec()),
+                    literal: Some(source_bytes[start_byte + 1..current_byte].to_vec()),
                     line,
                 });
             }
