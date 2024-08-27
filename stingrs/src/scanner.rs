@@ -108,7 +108,7 @@ enum TokenType {
 }
 
 #[derive(Debug, Default)]
-struct Token {
+pub struct Token {
     token_type: TokenType,
     literal: Option<Vec<u8>>,
     line: usize,
@@ -278,7 +278,7 @@ fn scan(source: &String) -> Vec<Token> {
                     }
                 } else {
                     tokens.push(Token {
-                        token_type: TokenType::Less,
+                        token_type: TokenType::Slash,
                         literal: None,
                         line,
                     })
