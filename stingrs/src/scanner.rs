@@ -5,26 +5,6 @@ use std::{
     path,
 };
 
-pub fn run_program(program: &String) {
-    let tokens = scan(program);
-    for token in tokens {
-        println!("{}", token.to_string());
-    }
-}
-
-pub fn run_prompt() {
-    let mut stdout = io::stdout().lock();
-    loop {
-        print!(">> ");
-        let _ = stdout.flush();
-        let mut buffer = String::new();
-        io::stdin()
-            .read_line(&mut buffer)
-            .expect("Couldn't read input");
-        run_program(&buffer);
-    }
-}
-
 pub fn correct_usage_message() {
     println!("Usage: string [script]");
 }
@@ -37,12 +17,6 @@ fn is_alphanumeric(a: &u8) -> bool {
     is_alpha(a) || (b'0'..=b'9').contains(a)
 }
 
-pub fn run_file(file_name: String) {
-    println!("Running {}...", file_name);
-    let file_path = path::Path::new(&file_name);
-    let program: String = load_file(&file_path);
-    run_program(&program);
-}
 
 fn load_file(file_path: &path::Path) -> String {
     let bytes: Vec<u8> = fs::read(file_path).expect("Couldn't read bytes from file");
@@ -363,4 +337,31 @@ fn scan(source: &String) -> Vec<Token> {
         line,
     });
     return tokens;
+}
+
+pub fn run_program(program: &String) {
+    let tokens = scan(program);
+    for token in tokens {
+        println!("{}", token.to_string());
+    }
+}
+
+pub fn run_prompt() {
+    let mut stdout = io::stdout().lock();
+    loop {
+        print!(">> ");
+        let _ = stdout.flush();
+        let mut buffer = String::new();
+        io::stdin()
+            .read_line(&mut buffer)
+            .expect("Couldn't read input");
+        run_program(&buffer);
+    }
+}
+
+pub fn run_file(file_name: String) {
+    println!("Running {}...", file_name);
+    let file_path = path::Path::new(&file_name);
+    let program: String = load_file(&file_path);
+    run_program(&program);
 }

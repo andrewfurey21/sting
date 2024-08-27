@@ -39,5 +39,7 @@ operator →  "+" | "*" | "/" | "-";
 
 A parse tree has all production rules as a node in the tree. in an abstract syntax tree, productions are omitted that aren't need by later phases.
 
+Visitor pattern
+
 
 

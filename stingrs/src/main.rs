@@ -1,4 +1,6 @@
 use std::env;
+
+mod parser;
 mod scanner;
 
 fn main() {
