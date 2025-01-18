@@ -50,6 +50,8 @@ def scan(file_name:str, source:str) -> List[Token]:
             return True
         else:
             return False
+    def is_digit(char):
+        return True if ord(char)>= 48 and ord(char) <= 57 else False
     while current < len(source):
         start = current
         current+=1
@@ -90,6 +92,14 @@ def scan(file_name:str, source:str) -> List[Token]:
                 string_literal = source[start:current]
                 current += 1
                 add_token(TokenType.STRING, source[start:current], line, string_literal);
+            case digit if is_digit(digit):
+                while is_digit(current < len(source) and source[current]):
+                    current += 1
+                if (source[current]=="." and current + 1< len(source) and is_digit(source[current+1])):
+                    current += 1
+                while is_digit(current < len(source) and source[current]):
+                    current += 1
+                add_token(TokenType.NUMBER, source[start:current], line, source[start:current])
             case _: 
                 Error.line_error(file_name, line, "unexpected lexeme")
     return tokens
