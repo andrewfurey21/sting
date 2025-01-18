@@ -26,6 +26,24 @@ class TokenType(Enum):
 
     EOF = auto();
 
+class Keywords:
+    kw = {"and": TokenType.AND,
+          "class": TokenType.CLASS,
+          "else": TokenType.ELSE,
+          "false": TokenType.FALSE,
+          "fn": TokenType.FUN,
+          "for": TokenType.FOR,
+          "if": TokenType.IF,
+          "nil": TokenType.NIL,
+          "or": TokenType.OR,
+          "print": TokenType.PRINT,
+          "return": TokenType.RETURN,
+          "super": TokenType.SUPER,
+          "this": TokenType.THIS,
+          "true": TokenType.TRUE,
+          "var": TokenType.VAR,
+          "while": TokenType.WHILE}
+
 class Token:
     def __init__(self, token_type:TokenType, lexeme:str, literal:object, line_number:int):
         self.token_type = token_type
@@ -52,6 +70,15 @@ def scan(file_name:str, source:str) -> List[Token]:
             return False
     def is_digit(char):
         return True if ord(char)>= 48 and ord(char) <= 57 else False
+    def is_alpha(char):
+        if ord(char) >= 65 and ord(char) <= 90:
+            return True
+        elif ord(char) >= 97 and ord(char) <= 122:
+            return True
+        elif ord(char) == 95:
+            return True
+        else:
+            return False
     while current < len(source):
         start = current
         current+=1
@@ -93,13 +120,21 @@ def scan(file_name:str, source:str) -> List[Token]:
                 current += 1
                 add_token(TokenType.STRING, source[start:current], line, string_literal);
             case digit if is_digit(digit):
-                while is_digit(current < len(source) and source[current]):
+                while current < len(source) and is_digit( source[current]):
                     current += 1
                 if (source[current]=="." and current + 1< len(source) and is_digit(source[current+1])):
                     current += 1
-                while is_digit(current < len(source) and source[current]):
+                while current < len(source) and is_digit(source[current]):
                     current += 1
-                add_token(TokenType.NUMBER, source[start:current], line, source[start:current])
+                add_token(TokenType.NUMBER, source[start:current], line, float(source[start:current]))
+            case alpha if is_alpha(alpha):
+                while current < len(source) and (is_alpha(source[current]) or is_digit(source[current])):
+                    current += 1
+
+                if source[start:current] in Keywords.kw:
+                    add_token(Keywords.kw[source[start:current]], source[start:current], line, source[start:current])
+                else:
+                    add_token(TokenType.IDENTIFIER, source[start:current], line, source[start:current])
             case _: 
                 Error.line_error(file_name, line, "unexpected lexeme")
     return tokens
