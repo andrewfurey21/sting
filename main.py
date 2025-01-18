@@ -42,11 +42,21 @@ def scan(file_name:str, source:str) -> List[Token]:
     line = 1
     def add_token(token_type:TokenType, text, line_number, literal:object=None):
         tokens.append(Token(token_type, text, literal, line_number))
+    def match(expected:str):
+        nonlocal current
+        assert len(expected) == 1, "only match chars"
+        if (current < len(source) and source[current] == expected):
+            current += 1
+            return True
+        else:
+            return False
     while current < len(source):
         start = current
         current+=1
         match source[start]:
             case "\n": line += 1
+            case " " | "\r" | "\t": continue
+            # single characters
             case "(": add_token(TokenType.LEFT_PAREN, source[start:current], line)
             case ")": add_token(TokenType.RIGHT_PAREN, source[start:current], line)
             case "{": add_token(TokenType.LEFT_BRACE, source[start:current], line)
@@ -57,9 +67,31 @@ def scan(file_name:str, source:str) -> List[Token]:
             case "+": add_token(TokenType.PLUS, source[start:current], line)
             case ";": add_token(TokenType.SEMICOLON, source[start:current], line)
             case "*": add_token(TokenType.STAR, source[start:current], line)
+            # others
+            case "!":
+                add_token(TokenType.NOT_EQUAL if match("=") else TokenType.NOT, source[start:current], line)
+            case "=":
+                add_token(TokenType.EQUAL if match("=") else TokenType.ASSIGN, source[start:current], line)
+            case ">":
+                add_token(TokenType.GREATER_EQUAL if match("=") else TokenType.GREATER, source[start:current], line)
+            case "<":
+                add_token(TokenType.LESS_EQUAL if match("=") else TokenType.LESS, source[start:current], line)
+            case "/":
+                if match("/"):
+                    current = source[start:].find("\n")+start
+                else:
+                    add_token(TokenType.SLASH, source[start:current], line)
+            case "\"":
+                while (current < len(source) and source[current] != "\""):
+                    current += 1
+                if (current >= len(source)):
+                    Error.line_error(file_name, line, "unterminated string")
+                    return []
+                string_literal = source[start:current]
+                current += 1
+                add_token(TokenType.STRING, source[start:current], line, string_literal);
             case _: 
                 Error.line_error(file_name, line, "unexpected lexeme")
-
     return tokens
 
 def run_from_file(file_name:str):
@@ -82,6 +114,7 @@ class Error:
 if __name__ == "__main__":
     assert len(sys.argv) == 2, "usage: python main.py [script]"
     run_from_file(sys.argv[1])
+
 
 
 
