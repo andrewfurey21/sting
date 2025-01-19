@@ -2,7 +2,7 @@ from typing import List
 
 from enum import Enum, auto
 
-from syntax_error import Error
+from err import SyntaxError
 
 class TokenType(Enum):
     # Single-character tokens.
@@ -57,7 +57,8 @@ class Token:
         return f"{self.lexeme}"
     def __repr__(self):
         return f"{self.token_type} {self.lexeme} {self.line_number}"
-def scan(file_name:str, source:str) -> List[Token]:
+
+def scan(source:str) -> List[Token]:
     tokens: List[Token] = [];
     current = 0
     line = 1
@@ -117,9 +118,9 @@ def scan(file_name:str, source:str) -> List[Token]:
                 while (current < len(source) and source[current] != "\""):
                     current += 1
                 if (current >= len(source)):
-                    Error.line_error(file_name, line, "unterminated string")
+                    SyntaxError.report_error(line, "unterminated string")
                     return []
-                string_literal = source[start:current]
+                string_literal = source[start+1:current]
                 current += 1
                 add_token(TokenType.STRING, source[start:current], line, string_literal);
             case digit if is_digit(digit):
@@ -139,5 +140,6 @@ def scan(file_name:str, source:str) -> List[Token]:
                 else:
                     add_token(TokenType.IDENTIFIER, source[start:current], line, source[start:current])
             case _: 
-                Error.line_error(file_name, line, "unexpected lexeme")
+                SyntaxError.report_error(line, "unexpected lexeme")
+    add_token(TokenType.EOF, None, line, None)
     return tokens
