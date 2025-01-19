@@ -2,6 +2,13 @@ import sys
 from enum import Enum, auto
 from typing import List
 
+class Error:
+    error = False
+    @classmethod
+    def line_error(cls, file_name, line_number, message):
+        print(f"Error at {file_name}:{line_number}: {message}")
+        cls.error = True
+
 class TokenType(Enum):
     # Single-character tokens.
     LEFT_PAREN = auto(); RIGHT_PAREN = auto(); 
@@ -52,6 +59,8 @@ class Token:
         self.line_number = line_number
 
     def __str__(self):
+        return f"{self.lexeme}"
+    def __repr__(self):
         return f"{self.token_type} {self.lexeme} {self.line_number}"
 
 def scan(file_name:str, source:str) -> List[Token]:
@@ -139,6 +148,18 @@ def scan(file_name:str, source:str) -> List[Token]:
                 Error.line_error(file_name, line, "unexpected lexeme")
     return tokens
 
+class Expr:
+    pass
+
+class Binary(Expr):
+    def __init__(self, left:Expr, op:Token, right:Expr):
+        self.left = left
+        self.op = op 
+        self.right = right
+    def __str__(self):
+        return f"{str(self.left)} {str(self.op)} {str(self.right)}"
+
+
 def run_from_file(file_name:str):
     assert file_name.split(".")[-1] == "sting", "this is not a sting source file"
     with open(file_name, "r") as file:
@@ -147,18 +168,17 @@ def run_from_file(file_name:str):
     assert not Error.error, "there was a problem running the code"
     
     for token in tokens:
-        print(token)
+        print(repr(token))
 
-class Error:
-    error = False
-    @classmethod
-    def line_error(cls, file_name, line_number, message):
-        print(f"Error at {file_name}:{line_number}: {message}")
-        cls.error = True
 
 if __name__ == "__main__":
     assert len(sys.argv) == 2, "usage: python main.py [script]"
     run_from_file(sys.argv[1])
+
+    e = Expr()
+    b = Binary(e, Token(TokenType.PLUS, "+", None, 2), e)
+    print(b)
+
 
 
 
