@@ -1,8 +1,8 @@
 # sting interpreter
 
 - [x] scanning
-- [ ] parsing
-- [ ] evaluating
+- [x] parsing
+- [x] evaluating
 - [ ] statements and state
 - [ ] control flow
 - [ ] functions
