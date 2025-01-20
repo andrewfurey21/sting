@@ -4,6 +4,15 @@ from expr import *
 from err import SyntaxError
 
 """
+BNF grammar
+
+program        → statement* EOF ;
+
+statement      → exprStmt | printStmt ;
+
+exprStmt       → expression ";" ;
+printStmt      → "print" expression ";" ;
+
 expression     → equality ;
 equality       → comparison ( ( "!=" | "==" ) comparison )* ;
 comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
@@ -13,6 +22,7 @@ unary          → ( "!" | "-" ) unary
                | primary ;
 primary        → NUMBER | STRING | "true" | "false" | "nil"
                | "(" expression ")" ;
+
 """
 
 class ParserError(Exception):
