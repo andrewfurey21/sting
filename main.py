@@ -25,7 +25,6 @@ class ASTPrinter(Operation[str]):
         return self.paren("group", [expr.expression])
 
     def visit_literal_expr(self, expr:Literal) -> str:
-        # TODO: deal wil nil/null
         return str(expr.value)
 
     def visit_unary_expr(self, expr:Unary) -> str:
@@ -46,11 +45,7 @@ class Interpreter(Operation[object]):
         return False
 
     def _equal(self, lhs:object, rhs:object) -> bool:
-        # if a is None and b is None:
-        #     return True
-        # if a is None:
-        #     return False
-        return a == b
+        return lhs == rhs
 
     def visit_binary_expr(self, expr:Binary) -> object:
         left = self._eval(expr.left)
@@ -82,7 +77,7 @@ class Interpreter(Operation[object]):
         return expr.value
 
     def visit_unary_expr(self, expr:Unary) -> object:
-        match expr.op:
+        match expr.op.token_type:
             case TokenType.MINUS:
                 return -float(self._eval(expr.right))
             case TokenType.NOT:
