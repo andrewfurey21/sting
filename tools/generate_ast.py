@@ -2,15 +2,6 @@ import sys
 from typing import List
 from io import TextIOWrapper
 
-"""
-[
-"Binary   : left:Expr, op:Token, right:Expr",
-"Grouping : expression:Expr",
-"Literal  : value:object",
-"Unary    : op:Token, right:Expr"
-]
-"""
-
 def fn_name(type_name:str, base_name:str):
     return f"visit_{type_name.lower()}_{base_name.lower()}"
 
@@ -52,14 +43,18 @@ if __name__ == "__main__":
     assert len(sys.argv) == 2, "usage: python generate_ast.py <output directory>"
     output_dir = sys.argv[1]
 
-    types = \
-[
-"Binary   : left:Expr, op:Token, right:Expr",
-"Grouping : expression:Expr",
-"Literal  : value:object",
-"Unary    : op:Token, right:Expr"
-]
+    expr_types = [
+        "Binary     : left:Expr, op:Token, right:Expr",
+        "Grouping   : expression:Expr",
+        "Literal    : value:object",
+        "Unary      : op:Token, right:Expr",
+    ]
+    stmt_types = [
+        "Expression : expression:Expr",
+        "Print      : expression:Expr",
+    ]
 
-    define_ast(output_dir, "expr", types)
+    define_ast(output_dir, "expr", expr_types)
+    define_ast(output_dir, "stmt", stmt_types)
 
 

@@ -2,6 +2,7 @@ from typing import List, Optional
 from scan import *
 from expr import *
 from err import SyntaxError
+from stmt import Expression, Print, Stmt
 
 """
 BNF grammar
@@ -38,12 +39,12 @@ class Parser:
     self.tokens: List[Token] = tokens
     self.current = 0
 
-  def __call__(self) -> Optional[Expr]:
-    try:
-      return self._expression()
-    except Exception as e:
-      print(f"An error occured: {e}")
-      return None
+  def __call__(self) -> List[Stmt]:
+    statements: List[Stmt] = []
+    while not self._at_end():
+      statements.append(self._statement())
+    return statements
+
 
   def _match_token(self, token_types:List[TokenType]) -> bool:
     for token_type in token_types:
@@ -66,7 +67,7 @@ class Parser:
     raise self._parser_error(self.tokens[self.current], message)
 
   def _sync(self):
-    print("syncing")
+    print("syncing ast")
     if not self._at_end():
       self.current += 1
 
@@ -85,6 +86,20 @@ class Parser:
 
       if not self._at_end():
         self.current += 1
+
+  def _statement(self) -> Stmt:
+    if self._match_token([TokenType.PRINT]): return self._print_statement();
+    return self._expression_statement()
+
+  def _print_statement(self) -> Stmt:
+    value: Expr = self._expression()
+    self._consume(TokenType.SEMICOLON, message="Expected ;")
+    return Print(value)
+
+  def _expression_statement(self) -> Stmt:
+    value: Expr = self._expression()
+    self._consume(TokenType.SEMICOLON, message="Expected ;")
+    return Expression(value)
 
   def _expression(self) -> Expr:
     return self._equality()
