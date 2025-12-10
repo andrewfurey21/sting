@@ -1,28 +1,4 @@
-# sting interpreter
+# sting-lang
 
-- [x] scanning
-- [x] parsing
-- [x] evaluating
-- [ ] statements and state
-- [ ] control flow
-- [ ] functions
-- [ ] resolving and binding
-- [ ] classes
-- [ ] inheritance
-- [ ] bytecode
-- [ ] virtual machine
-- [ ] more scanning
-- [ ] compiling expressions
-- [ ] types
-- [ ] strings
-- [ ] hash tables
-- [ ] global variables
-- [ ] local variables
-- [ ] jumping back and forth
-- [ ] calls and functions
-- [ ] closures
-- [ ] garbage collection
-- [ ] classes and instances
-- [ ] methods and initializers
-- [ ] superclasses
-- [ ] optimization
+Goal:
+- implement a type-safe scripting language with internals similar to python in C
