@@ -1,4 +1,3 @@
 # sting-lang
 
-Goal:
-- implement a type-safe scripting language with internals similar to python in C
+Bytecode VM based on clox from [Crafting Interpreters](https://craftinginterpreters.com/).
