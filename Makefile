@@ -1,2 +1,2 @@
 all:
-	gcc -o test test.c
+	g++ -o sting -std=c++17 ./src/main.cpp -g
