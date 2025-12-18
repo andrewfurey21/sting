@@ -5,15 +5,17 @@
 */
 
 // TODO: use precompiled headers
+#include <cmath>
 #include <cstdint>
 #include <cassert>
 #include <initializer_list>
+#include <iomanip>
 #include <iostream>
 #include <ostream>
 
 using u64 = uint64_t;
 using i32 = int32_t;
-using f32 = float;
+using f32 = float_t;
 
 namespace sting {
 
@@ -172,8 +174,9 @@ private:
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const dynamic_array<T>& other) {
-    os << "Capacity: " << other.capacity() << "\tSize: " << other.size() << "\n";
+    // os << "Capacity: " << other.capacity() << "\tSize: " << other.size() << "\n";
     for (u64 i{0}; i < other.size(); i++) {
+        os << std::setw(4) << std::setfill('0') << i << ' ';
         os << other.at(i);
         if (i != other.size() - 1) {
             os << "\n";
@@ -201,11 +204,34 @@ std::ostream& operator<<(std::ostream& os, opcode op) {
     return os;
 }
 
+struct chunk {
+    chunk(const std::string& name) : name(name) {}
+    std::string name;
+    dynamic_array<opcode> bytecode;
+
+    void add_instruction(const opcode op) {
+        bytecode.push_back(op);
+    }
+    friend std::ostream& operator<<(std::ostream& os, const chunk& chk);
+
+};
+
+std::ostream& operator<<(std::ostream& os, const chunk& chk) {
+    os << "---- CHUNK: " << chk.name << " ---- \n";
+    os << chk.bytecode << "\n";
+    return os;
+}
+
 }
 
 int main() {
-    sting::dynamic_array<sting::opcode> a;
-    std::cerr << a << "\n";
+
+    sting::chunk hello("hello world");
+    hello.add_instruction(sting::opcode::RETURN);
+    hello.add_instruction(sting::opcode::RETURN);
+    hello.add_instruction(sting::opcode::RETURN);
+
+    std::cerr << hello << "\n";
 
     return 0;
 }
