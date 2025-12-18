@@ -274,6 +274,8 @@ std::ostream& operator<<(std::ostream& os, const chunk& chk) {
         switch (instr.op) {
             case opcode::CONST:
                 os << "Value(" << chk.constant_pool.at(instr.a).data << ")";
+            case opcode::RETURN:
+                os << "\t";
             default:
                 os << "\tline: " << chk.lines.at(i) << "\n";
         }
@@ -285,7 +287,7 @@ std::ostream& operator<<(std::ostream& os, const chunk& chk) {
 
 int main() {
 
-    sting::chunk hello("hello world");
+    sting::chunk hello("test_chunk");
 
     sting::value a { .data = 0.5f };
     u64 index = hello.add_constant(a);
@@ -293,11 +295,13 @@ int main() {
 
     sting::value b { .data = 1.5f };
     index = hello.add_constant(a);
-    hello.write_instruction(sting::opcode::CONST, 256, index);
+    hello.write_instruction(sting::opcode::CONST, 0, index);
 
     sting::value c { .data = 3.5f };
     index = hello.add_constant(a);
-    hello.write_instruction(sting::opcode::CONST, 2, index);
+    hello.write_instruction(sting::opcode::CONST, 0, index);
+
+    hello.write_instruction(sting::opcode::RETURN, 1);
 
     std::cerr << hello << "\n";
     return 0;
