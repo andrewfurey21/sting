@@ -1,11 +1,10 @@
 /*
 
-1. opcode enum
-2. dynamic array
-3. disassembler
+1. disassembler
 
 */
 
+// TODO: use precompiled headers
 #include <cstdint>
 #include <cassert>
 #include <initializer_list>
@@ -176,36 +175,37 @@ std::ostream& operator<<(std::ostream& os, const dynamic_array<T>& other) {
     os << "Capacity: " << other.capacity() << "\tSize: " << other.size() << "\n";
     for (u64 i{0}; i < other.size(); i++) {
         os << other.at(i);
-        if (i != other.size() - 1)
-            os << ", ";
+        if (i != other.size() - 1) {
+            os << "\n";
+            // os << ", ";
+        }
     }
+    return os;
+}
+
+enum class opcode {
+    RETURN
+};
+
+std::string opcode_to_string(opcode op) {
+    switch (op) {
+        case opcode::RETURN:
+            return "RETURN";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, opcode op) {
+    os << opcode_to_string(op);
     return os;
 }
 
 }
 
 int main() {
-    sting::dynamic_array<f32> a;
-    a.push_back(1);
-    a.push_back(2);
-    a.push_back(3);
-    a.push_back(4);
-    a.push_back(5);
-
-    sting::dynamic_array<f32> c = sting::steal(a);
-    sting::dynamic_array<f32> b;
-    for (u64 i{0}; i < 20; i++)
-        b.push_back(i + 20);
-    b = sting::steal(c);
-    b.at(4) += 1;
-
-    sting::dynamic_array<u64> f = {1, 2, 3, 4, 5, 6};
-
-    std::cerr << "F" << f << "\n";
-
-    std::cerr << "C " << c << "\n";
-    std::cerr << "B " << b << "\n";
-    std::cerr << "A " << a << "\n";
+    sting::dynamic_array<sting::opcode> a;
+    std::cerr << a << "\n";
 
     return 0;
 }
