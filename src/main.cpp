@@ -14,10 +14,13 @@
 #include <ostream>
 
 using u64 = uint64_t;
+using u32 = uint32_t;
 using i32 = int32_t;
 using f32 = float_t;
 
 namespace sting {
+
+const u64 DEFAULT_SIZE = 1 << 8;
 
 void panic_if(bool expr, const std::string& msg, const i32 code) {
     if (!expr) return;
@@ -65,7 +68,7 @@ decltype(auto) steal(T&& value) {
 template <typename T>
 class dynamic_array {
 public:
-    dynamic_array() : dynamic_array(256) {}
+    dynamic_array() : dynamic_array(DEFAULT_SIZE) {}
 
     dynamic_array(u64 capacity) : _capacity(capacity), _size(0) {
         _data = allocate_capacity();
@@ -139,7 +142,6 @@ private:
     }
 
     T* copy_array(const dynamic_array<T>& other) {
-        std::cerr << "copying dynamic array\n";
         T* data = allocate_capacity();
         for (u64 i{0}; i < this->size(); i++) {
             new (&data[i]) T(other.at(i));
@@ -187,38 +189,95 @@ std::ostream& operator<<(std::ostream& os, const dynamic_array<T>& other) {
 }
 
 enum class opcode {
-    RETURN
+    RETURN,
+    CONST
 };
 
+
+// TODO: inherit dynamic_array
+// template <typename T, const u64 Size = DEFAULT_SIZE>
+// class static_array {
+// public:
+//     static_array() : array(Size) {}
+//     void push_back(const T& t) {
+//         array.push_back(t);
+//         panic_if(array.size() > Size);
+//     }
+// private:
+//     dynamic_array<T> array;
+// };
+
+// should be std::expected
 std::string opcode_to_string(opcode op) {
     switch (op) {
         case opcode::RETURN:
             return "RETURN";
+        case opcode::CONST:
+            return "CONST";
         default:
             return "UNKNOWN";
     }
 }
 
-std::ostream& operator<<(std::ostream& os, opcode op) {
-    os << opcode_to_string(op);
+// NOTE: could possibly be a base class whose derivatives point to memory of some size
+struct value {
+    f32 data;
+};
+
+// NOTE: might just have a std::array impl? (heap allocated though)
+struct instruction {
+    opcode op;
+    u32 a;
+    u32 b;
+    u32 c;
+};
+
+std::ostream& operator<<(std::ostream& os, const instruction& instr) {
+    os << opcode_to_string(instr.op) << ": " << instr.a << ", " << instr.b << ", " << instr.c << ", ";
     return os;
 }
 
 struct chunk {
     chunk(const std::string& name) : name(name) {}
     std::string name;
-    dynamic_array<opcode> bytecode;
+    dynamic_array<instruction> bytecode;
+    dynamic_array<value> constant_pool;
+    dynamic_array<u64> lines;
 
-    void add_instruction(const opcode op) {
-        bytecode.push_back(op);
+    void write_instruction(const opcode op, u64 line, u32 a = 0, u32 b = 0, u32 c = 0) {
+        instruction instr = {
+            .op = op,
+            .a = a,
+            .b = b,
+            .c = c
+        };
+
+        // lines.size() == bytecode.size();
+        lines.push_back(line);
+        bytecode.push_back(instr);
     }
-    friend std::ostream& operator<<(std::ostream& os, const chunk& chk);
 
+    u64 add_constant(const value& val) {
+        u64 index = constant_pool.size();
+        constant_pool.push_back(val);
+        return index;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const chunk& chk);
 };
 
 std::ostream& operator<<(std::ostream& os, const chunk& chk) {
     os << "---- CHUNK: " << chk.name << " ---- \n";
-    os << chk.bytecode << "\n";
+    for (u64 i{0}; i < chk.bytecode.size(); i++) {
+        const instruction& instr = chk.bytecode.at(i);
+        os << instr << "\t";
+        switch (instr.op) {
+            case opcode::CONST:
+                os << "Value(" << chk.constant_pool.at(instr.a).data << ")";
+            default:
+                os << "\tline: " << chk.lines.at(i) << "\n";
+        }
+    }
     return os;
 }
 
@@ -227,11 +286,19 @@ std::ostream& operator<<(std::ostream& os, const chunk& chk) {
 int main() {
 
     sting::chunk hello("hello world");
-    hello.add_instruction(sting::opcode::RETURN);
-    hello.add_instruction(sting::opcode::RETURN);
-    hello.add_instruction(sting::opcode::RETURN);
+
+    sting::value a { .data = 0.5f };
+    u64 index = hello.add_constant(a);
+    hello.write_instruction(sting::opcode::CONST, 0, index);
+
+    sting::value b { .data = 1.5f };
+    index = hello.add_constant(a);
+    hello.write_instruction(sting::opcode::CONST, 256, index);
+
+    sting::value c { .data = 3.5f };
+    index = hello.add_constant(a);
+    hello.write_instruction(sting::opcode::CONST, 2, index);
 
     std::cerr << hello << "\n";
-
     return 0;
 }
