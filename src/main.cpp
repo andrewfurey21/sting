@@ -1,9 +1,3 @@
-/*
-
-1. disassembler
-
-*/
-
 // TODO: use precompiled headers
 #include <cmath>
 #include <cstdint>
@@ -133,6 +127,16 @@ public:
         at(_size - 1) = x;
     }
 
+    // TODO: impl std::expected
+    T pop_back() {
+        T ret = at(_size - 1);
+        _size--;
+        _data[_size].~T();
+        return ret;
+    }
+
+    T* data() const { return _data; }
+
     template<typename U>
     friend std::ostream& operator<<(std::ostream& os, const dynamic_array<U>& other);
 
@@ -190,7 +194,12 @@ std::ostream& operator<<(std::ostream& os, const dynamic_array<T>& other) {
 
 enum class opcode {
     RETURN,
-    CONST
+    LOAD_CONST,
+    NEGATE,
+    ADD,
+    MULTIPLY,
+    DIVIDE,
+    SUBTRACT,
 };
 
 
@@ -212,8 +221,18 @@ std::string opcode_to_string(opcode op) {
     switch (op) {
         case opcode::RETURN:
             return "RETURN";
-        case opcode::CONST:
+        case opcode::LOAD_CONST:
             return "CONST";
+        case opcode::NEGATE:
+            return "NEGATE";
+        case opcode::ADD:
+            return "ADD";
+        case opcode::MULTIPLY:
+            return "MULTIPLY";
+        case opcode::DIVIDE:
+            return "DIVIDE";
+        case opcode::SUBTRACT:
+            return "SUBTRACT";
         default:
             return "UNKNOWN";
     }
@@ -222,6 +241,22 @@ std::string opcode_to_string(opcode op) {
 // NOTE: could possibly be a base class whose derivatives point to memory of some size
 struct value {
     f32 data;
+
+    value operator+(const value& other) const {
+        return value { .data = this->data + other.data };
+    }
+
+    value operator-(const value& other) const {
+        return value { .data = this->data - other.data };
+    }
+
+    value operator*(const value& other) const {
+        return value { .data = this->data * other.data };
+    }
+
+    value operator/(const value& other) const {
+        return value { .data = this->data / other.data };
+    }
 };
 
 // NOTE: might just have a std::array impl? (heap allocated though)
@@ -257,7 +292,7 @@ struct chunk {
         bytecode.push_back(instr);
     }
 
-    u64 add_constant(const value& val) {
+    u64 load_constant(const value& val) {
         u64 index = constant_pool.size();
         constant_pool.push_back(val);
         return index;
@@ -272,37 +307,146 @@ std::ostream& operator<<(std::ostream& os, const chunk& chk) {
         const instruction& instr = chk.bytecode.at(i);
         os << instr << "\t";
         switch (instr.op) {
-            case opcode::CONST:
+            case opcode::LOAD_CONST:
                 os << "Value(" << chk.constant_pool.at(instr.a).data << ")";
-            case opcode::RETURN:
-                os << "\t";
             default:
-                os << "\tline: " << chk.lines.at(i) << "\n";
+                os << "\t";
         }
+        os << "\tline: " << chk.lines.at(i) << "\n";
     }
     return os;
 }
+
+
+enum class vm_result {
+    OK,
+    COMPILE_ERROR,
+    RUNTIME_ERROR
+};
+
+class virtual_machine {
+public:
+    virtual_machine(const chunk& chk) : chk(chk) {
+        pc = chk.bytecode.data();
+    }
+
+    vm_result run_chunk() {
+        for (;;) {
+            const instruction& current = *pc;
+            pc++;
+
+            switch(current.op) {
+                case opcode::RETURN: {
+                    if (value_stack.size() > 0) {
+                        const value& val = value_stack.at(value_stack.size() - 1);
+                        std::cerr << val.data << "\n";
+                    }
+                    return vm_result::OK;
+                }
+
+                case opcode::LOAD_CONST: {
+                    u64 index = current.a;
+                    const value& val = chk.constant_pool.at(index);
+                    value_stack.push_back(val);
+                    break;
+                }
+
+                case opcode::NEGATE: {
+                    value a = value_stack.pop_back();
+                    a.data *= -1;
+                    value_stack.push_back(a);
+                    break;
+                }
+
+                case opcode::ADD: {
+                    const value a = value_stack.pop_back();
+                    const value b = value_stack.pop_back();
+                    const value c = a + b;
+                    value_stack.push_back(c);
+                    break;
+                }
+
+                case opcode::MULTIPLY: {
+                    const value a = value_stack.pop_back();
+                    const value b = value_stack.pop_back();
+                    const value c = a * b;
+                    value_stack.push_back(c);
+                    break;
+                }
+
+                case opcode::DIVIDE: {
+                    const value a = value_stack.pop_back();
+                    const value b = value_stack.pop_back();
+                    const value c = b / a;
+                    value_stack.push_back(c);
+                    break;
+                }
+
+                case opcode::SUBTRACT: {
+                    const value a = value_stack.pop_back();
+                    const value b = value_stack.pop_back();
+                    const value c = a - b;
+                    value_stack.push_back(c);
+                    break;
+                }
+
+
+                default: {
+                    std::stringstream errMessage;
+                    errMessage << "Unknown opcode: " << static_cast<i32>(current.op);
+                    panic_if(true, errMessage.str(), -1);
+                }
+            }
+        }
+    }
+
+private:
+    chunk chk;
+    instruction* pc;
+    dynamic_array<value> value_stack;
+};
 
 }
 
 int main() {
 
-    sting::chunk hello("test_chunk");
+    sting::chunk test_chunk("test_chunk");
 
-    sting::value a { .data = 0.5f };
-    u64 index = hello.add_constant(a);
-    hello.write_instruction(sting::opcode::CONST, 0, index);
+    // Example: (a * b - c + (-d)) / e
+    // 1: a * b
+    // 2: (a * b) - c
+    // 3: -d
+    // 4: (a * b) - c + (-d)
+    // 5: ((a * b) - c + (-d)) / e
+    sting::value a { .data = 1.0f };
+    sting::value b { .data = 2.0f };
+    sting::value c { .data = 3.0f };
+    sting::value d { .data = 4.0f };
+    sting::value e { .data = 5.0f };
 
-    sting::value b { .data = 1.5f };
-    index = hello.add_constant(a);
-    hello.write_instruction(sting::opcode::CONST, 0, index);
+    u64 a_index = test_chunk.load_constant(a);
+    u64 b_index = test_chunk.load_constant(b);
+    u64 c_index = test_chunk.load_constant(c);
+    u64 d_index = test_chunk.load_constant(d);
+    u64 e_index = test_chunk.load_constant(e);
 
-    sting::value c { .data = 3.5f };
-    index = hello.add_constant(a);
-    hello.write_instruction(sting::opcode::CONST, 0, index);
+    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 1, a_index);
+    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 1, b_index);
+    test_chunk.write_instruction(sting::opcode::MULTIPLY, 1);
+    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 2, c_index);
+    test_chunk.write_instruction(sting::opcode::SUBTRACT, 2);
+    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 3, d_index);
+    test_chunk.write_instruction(sting::opcode::NEGATE, 3);
+    test_chunk.write_instruction(sting::opcode::ADD, 4);
+    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 5, e_index);
+    test_chunk.write_instruction(sting::opcode::DIVIDE, 5);
+    test_chunk.write_instruction(sting::opcode::RETURN, 6);
 
-    hello.write_instruction(sting::opcode::RETURN, 1);
 
-    std::cerr << hello << "\n";
+    std::cerr << test_chunk << "\n";
+    sting::virtual_machine vm(test_chunk);
+    sting::vm_result result = vm.run_chunk();
+
+    sting::panic_if(result != sting::vm_result::OK, "Error from vm", -1);
     return 0;
 }
