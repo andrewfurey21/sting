@@ -2,13 +2,16 @@
 #include <cmath>
 #include <cstdint>
 #include <cassert>
+#include <fstream>
 #include <initializer_list>
 #include <iomanip>
 #include <iostream>
 #include <ostream>
+#include <filesystem>
 
 using u64 = uint64_t;
 using u32 = uint32_t;
+using u8 = char;
 using i32 = int32_t;
 using f32 = float_t;
 
@@ -408,45 +411,21 @@ private:
 
 }
 
+std::string read_file(const std::filesystem::path& path) {
+    const u64 size = std::filesystem::file_size(path);
+    u8* data = (u8*)malloc(size * sizeof(u8*));
+    std::ifstream f(path);
+    f.read(data, size);
+    std::string str(data, size);
+    return str;
+}
+
 int main() {
 
-    sting::chunk test_chunk("test_chunk");
+    namespace fs = std::filesystem;
+    const fs::path path = "main.sting";
+    std::string file = read_file(path);
+    std::cout << file;
 
-    // Example: (a * b - c + (-d)) / e
-    // 1: a * b
-    // 2: (a * b) - c
-    // 3: -d
-    // 4: (a * b) - c + (-d)
-    // 5: ((a * b) - c + (-d)) / e
-    sting::value a { .data = 1.0f };
-    sting::value b { .data = 2.0f };
-    sting::value c { .data = 3.0f };
-    sting::value d { .data = 4.0f };
-    sting::value e { .data = 5.0f };
-
-    u64 a_index = test_chunk.load_constant(a);
-    u64 b_index = test_chunk.load_constant(b);
-    u64 c_index = test_chunk.load_constant(c);
-    u64 d_index = test_chunk.load_constant(d);
-    u64 e_index = test_chunk.load_constant(e);
-
-    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 1, a_index);
-    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 1, b_index);
-    test_chunk.write_instruction(sting::opcode::MULTIPLY, 1);
-    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 2, c_index);
-    test_chunk.write_instruction(sting::opcode::SUBTRACT, 2);
-    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 3, d_index);
-    test_chunk.write_instruction(sting::opcode::NEGATE, 3);
-    test_chunk.write_instruction(sting::opcode::ADD, 4);
-    test_chunk.write_instruction(sting::opcode::LOAD_CONST, 5, e_index);
-    test_chunk.write_instruction(sting::opcode::DIVIDE, 5);
-    test_chunk.write_instruction(sting::opcode::RETURN, 6);
-
-
-    std::cerr << test_chunk << "\n";
-    sting::virtual_machine vm(test_chunk);
-    sting::vm_result result = vm.run_chunk();
-
-    sting::panic_if(result != sting::vm_result::OK, "Error from vm", -1);
     return 0;
 }
