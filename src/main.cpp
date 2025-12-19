@@ -65,6 +65,7 @@ decltype(auto) steal(T&& value) {
     return static_cast<typename type_traits::remove_reference<T>::type&&>(value);
 }
 
+// currently just a stack, can only push/pop.
 template <typename T>
 class dynamic_array {
 public:
@@ -443,13 +444,17 @@ public:
     token next_token() {
         skip_whitespace();
         u8* start = current;
-        u8 c = get_char();
+        u8 c = *current;
         if (at_end(start)) return build_token(token_type::END_OF_FILE, start);
 
         auto build_token_start = [=](token_type type) -> token {
             return this->build_token(type, start);
         };
 
+        if (is_digit(c)) return number_token();
+        if (is_alpha(c)) return identifier_token();
+
+        current++;
         switch (c) {
             case '(': return build_token_start(token_type::LEFT_PAREN);
             case ')': return build_token_start(token_type::RIGHT_PAREN);
@@ -553,9 +558,69 @@ public:
             current++;
         }
         token t = build_token(token_type::STRING, start);
-        current+=2;
+        current += 2;
         return t;
     }
+
+    token number_token() {
+        u8* start = current;
+        while (is_digit(*current)) current++;
+
+        if (*current == '.' && is_digit(peek_next()))
+            current++;
+
+        while (is_digit(*current)) current++;
+
+        return build_token(token_type::NUMBER, start);
+    }
+
+    token identifier_token() {
+        u8* start = current;
+        while (is_alpha(*current) || is_digit(*current)) {
+            current++;
+        }
+
+        token t = build_token(token_type::IDENTIFIER, start);
+
+        auto match = [&t, start, this](const char* keyword, token_type type) {
+            match_keyword(start, (current - start), keyword, type, t);
+        };
+
+        match("and", token_type::AND);
+        match("class", token_type::CLASS);
+        match("else", token_type::ELSE);
+        match("false", token_type::FALSE);
+        match("for", token_type::FOR);
+        match("fun", token_type::FUN);
+        match("if", token_type::IF);
+        match("nil", token_type::NIL);
+        match("or", token_type::OR);
+        match("print", token_type::PRINT);
+        match("return", token_type::RETURN);
+        match("super", token_type::SUPER);
+        match("this", token_type::THIS);
+        match("true", token_type::TRUE);
+        match("var", token_type::VAR);
+        match("while", token_type::WHILE);
+
+        return t;
+    }
+
+    void match_keyword(char* ident, u64 size, const char* keyword,
+                       token_type type, token& tok) {
+        if (strlen(keyword) != size) return;
+        if (strncmp(ident, keyword, size) != 0) return;
+        tok = build_token(type, ident);
+    }
+
+    bool is_alpha(u8 ch) {
+        if (ch == '_') return true;
+        if ('A' <= ch && ch <= 'Z') return true;
+        if ('a' <= ch && ch <= 'z') return true;
+        return false;
+    }
+
+    bool is_digit(u8 ch) { return '0' <= ch && ch <= '9'; }
 
     bool at_end(u8* char_ptr) {
         return (char_ptr - source) == size;
@@ -584,14 +649,13 @@ int main() {
         } else if (t.type == sting::token_type::END_OF_FILE) {
             break;
         } else if (t.line != current_line) {
-            std::cerr << t.line;
+            std::cerr << "\n"  << std::setw(2) << std::setfill('0') << t.line << " |";
             current_line = t.line;
         } else {
-            std::cerr << "|";
+            printf("token(%.*s), ", (int)t.length, t.start);
         }
-
-        printf("%.*s\n", (int)t.length, t.start);
     }
+    std::cout << std::endl;
 
     return 0;
 }
