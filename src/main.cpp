@@ -2,6 +2,8 @@
 #include <cmath>
 #include <cstdint>
 #include <cassert>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <initializer_list>
 #include <iomanip>
@@ -12,6 +14,7 @@
 using u64 = uint64_t;
 using u32 = uint32_t;
 using u8 = char;
+using i64 = int64_t;
 using i32 = int32_t;
 using f32 = float_t;
 
@@ -183,13 +186,11 @@ private:
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const dynamic_array<T>& other) {
-    // os << "Capacity: " << other.capacity() << "\tSize: " << other.size() << "\n";
     for (u64 i{0}; i < other.size(); i++) {
         os << std::setw(4) << std::setfill('0') << i << ' ';
         os << other.at(i);
         if (i != other.size() - 1) {
             os << "\n";
-            // os << ", ";
         }
     }
     return os;
@@ -204,20 +205,6 @@ enum class opcode {
     DIVIDE,
     SUBTRACT,
 };
-
-
-// TODO: inherit dynamic_array
-// template <typename T, const u64 Size = DEFAULT_SIZE>
-// class static_array {
-// public:
-//     static_array() : array(Size) {}
-//     void push_back(const T& t) {
-//         array.push_back(t);
-//         panic_if(array.size() > Size);
-//     }
-// private:
-//     dynamic_array<T> array;
-// };
 
 // should be std::expected
 std::string opcode_to_string(opcode op) {
@@ -409,7 +396,6 @@ private:
     dynamic_array<value> value_stack;
 };
 
-}
 
 std::string read_file(const std::filesystem::path& path) {
     const u64 size = std::filesystem::file_size(path);
@@ -420,12 +406,192 @@ std::string read_file(const std::filesystem::path& path) {
     return str;
 }
 
-int main() {
+enum class token_type {
+  // Single-character tokens.
+  LEFT_PAREN, RIGHT_PAREN,
+  LEFT_BRACE, RIGHT_BRACE,
+  COMMA, DOT, MINUS, PLUS,
+  SEMICOLON, SLASH, STAR,
+  // One or two character tokens.
+  BANG, BANG_EQUAL,
+  EQUAL, EQUAL_EQUAL,
+  GREATER, GREATER_EQUAL,
+  LESS, LESS_EQUAL,
+  // Literals.
+  IDENTIFIER, STRING, NUMBER,
+  // Keywords.
+  AND, CLASS, ELSE, FALSE,
+  FOR, FUN, IF, NIL, OR,
+  PRINT, RETURN, SUPER, THIS,
+  TRUE, VAR, WHILE,
 
-    namespace fs = std::filesystem;
-    const fs::path path = "main.sting";
-    std::string file = read_file(path);
-    std::cout << file;
+  ERROR, END_OF_FILE
+};
+
+// TODO: inheritance for different tokens
+struct token {
+    token_type type;
+    u8* start;
+    u64 length;
+    u64 line;
+};
+
+class scanner {
+public:
+    scanner(u8* source, u64 size) : source(source), current(source), line(1), size(size) {}
+
+    token next_token() {
+        skip_whitespace();
+        u8* start = current;
+        u8 c = get_char();
+        if (at_end(start)) return build_token(token_type::END_OF_FILE, start);
+
+        auto build_token_start = [=](token_type type) -> token {
+            return this->build_token(type, start);
+        };
+
+        switch (c) {
+            case '(': return build_token_start(token_type::LEFT_PAREN);
+            case ')': return build_token_start(token_type::RIGHT_PAREN);
+            case '{': return build_token_start(token_type::LEFT_BRACE);
+            case '}': return build_token_start(token_type::RIGHT_BRACE);
+            case ';': return build_token_start(token_type::SEMICOLON);
+            case ',': return build_token_start(token_type::COMMA);
+            case '.': return build_token_start(token_type::DOT);
+            case '-': return build_token_start(token_type::MINUS);
+            case '+': return build_token_start(token_type::PLUS);
+            case '/': return build_token_start(token_type::SLASH);
+            case '*': return build_token_start(token_type::STAR);
+            case '!':
+                return build_token_start(
+                    match_next_char('=') ? token_type::BANG_EQUAL : token_type::BANG);
+            case '=':
+                return build_token_start(
+                    match_next_char('=') ? token_type::EQUAL_EQUAL : token_type::EQUAL);
+            case '<':
+                return build_token_start(
+                    match_next_char('=') ? token_type::LESS_EQUAL : token_type::LESS);
+            case '>':
+                return build_token_start(
+                    match_next_char('=') ? token_type::GREATER_EQUAL : token_type::GREATER);
+            case '\"':
+                return string_token();
+            default:
+                return error_token(const_cast<u8*>("that's not a token i recognize mate."));
+        }
+    }
+
+    u8 get_char() {
+        u8 ret = *current;
+        current++;
+        return ret;
+    }
+
+    u8 peek_next() {
+        if (at_end(current + 1)) return '\0';
+        return current[1];
+    }
+
+    void skip_whitespace() {
+        for (;;) {
+            u8 check = *current;
+            switch (check) {
+                case '/': {
+                    if (peek_next() == '/') {
+                        current += 2;
+                        while (!at_end(current) && get_char() != '\n'); // lol
+                        line++;
+                    }
+                    return;
+                }
+                case ' ':
+                case '\t':
+                case '\r':
+                    current++;
+                    break;
+                case '\n':
+                    line++;
+                    current++;
+                    break;
+                default:
+                    return;
+            }
+        }
+    }
+
+    bool match_next_char(u8 next) {
+        u8 check = *current;
+        if (at_end(current) || check != next)
+            return false;
+        current++;
+        return true;
+    }
+
+    token build_token(token_type type, u8* start) {
+        u64 len = current - start;
+        return token {
+            .type = type,
+            .start = start,
+            .length = len,
+            .line = line
+        };
+    }
+
+    token error_token(u8* message) { // null terminated message
+        return token {
+            .type = token_type::ERROR,
+            .start = message,
+            .length = strlen(message),
+            .line = line
+        };
+    }
+
+    token string_token() {
+        u8* start = current++;
+        while (peek_next() != '\"') {
+            if (at_end(current)) return error_token(const_cast<u8*>("unterminated string."));
+            current++;
+        }
+        token t = build_token(token_type::STRING, start);
+        current+=2;
+        return t;
+    }
+
+    bool at_end(u8* char_ptr) {
+        return (char_ptr - source) == size;
+    }
+
+private:
+    u8* source;
+    u8* current;
+    u64 line;
+    u64 size;
+};
+
+}
+
+int main() {
+    u64 current_line = 0;
+    std::string source = sting::read_file("main.sting");
+    std::cout << "----------- Source -------------\n" << source
+              << "--------------------------------\n";
+    sting::scanner scanner(source.data(), source.size());
+    for (;;) {
+        sting::token t = scanner.next_token();
+        if (t.type == sting::token_type::ERROR) {
+            printf("%.*s\n", (int)t.length, t.start);
+            break;
+        } else if (t.type == sting::token_type::END_OF_FILE) {
+            break;
+        } else if (t.line != current_line) {
+            std::cerr << t.line;
+            current_line = t.line;
+        } else {
+            std::cerr << "|";
+        }
+
+        printf("%.*s\n", (int)t.length, t.start);
+    }
 
     return 0;
 }
