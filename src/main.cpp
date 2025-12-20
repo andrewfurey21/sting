@@ -5,11 +5,13 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <initializer_list>
 #include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <filesystem>
+#include <string>
 
 using u64 = uint64_t;
 using u32 = uint32_t;
@@ -66,6 +68,7 @@ decltype(auto) steal(T&& value) {
 }
 
 // currently just a stack, can only push/pop.
+// look into semistable::vector
 template <typename T>
 class dynamic_array {
 public:
@@ -283,8 +286,8 @@ struct chunk {
         bytecode.push_back(instr);
     }
 
-    u64 load_constant(const value& val) {
-        u64 index = constant_pool.size();
+    u32 load_constant(const value& val) {
+        u32 index = constant_pool.size();
         constant_pool.push_back(val);
         return index;
     }
@@ -309,7 +312,7 @@ std::ostream& operator<<(std::ostream& os, const chunk& chk) {
 }
 
 
-enum class vm_result {
+enum class vm_result { // just result?
     OK,
     COMPILE_ERROR,
     RUNTIME_ERROR
@@ -404,6 +407,7 @@ std::string read_file(const std::filesystem::path& path) {
     std::ifstream f(path);
     f.read(data, size);
     std::string str(data, size);
+    free(data);
     return str;
 }
 
@@ -439,7 +443,22 @@ struct token {
 
 class scanner {
 public:
-    scanner(u8* source, u64 size) : source(source), current(source), line(1), size(size) {}
+    scanner(u8* source, u64 size) : source(source), current(source), line(1), size(size) {
+
+    }
+
+    bool tokenize(dynamic_array<token>& tokens) {
+        for (;;) {
+            token t = next_token();
+            tokens.push_back(t);
+            if (t.type == sting::token_type::END_OF_FILE) {
+                break;
+            } else if (t.type == sting::token_type::ERROR) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     token next_token() {
         skip_whitespace();
@@ -583,7 +602,7 @@ public:
         token t = build_token(token_type::IDENTIFIER, start);
 
         auto match = [&t, start, this](const char* keyword, token_type type) {
-            match_keyword(start, (current - start), keyword, type, t);
+            match_keyword(start, (this->current - start), keyword, type, t);
         };
 
         match("and", token_type::AND);
@@ -633,29 +652,155 @@ private:
     u64 size;
 };
 
-}
+enum class precedence {
+    NONE,
+    ASSIGNMENT,  // =
+    OR,          // or
+    AND,         // and
+    EQUALITY,    // == !=
+    COMPARISON,  // < > <= >=
+    TERM,        // + -
+    FACTOR,      // * /
+    UNARY,       // ! -
+    CALL,        // . ()
+    PRIMARY
+};
 
-int main() {
-    u64 current_line = 0;
-    std::string source = sting::read_file("main.sting");
-    std::cout << "----------- Source -------------\n" << source
-              << "--------------------------------\n";
-    sting::scanner scanner(source.data(), source.size());
-    for (;;) {
-        sting::token t = scanner.next_token();
-        if (t.type == sting::token_type::ERROR) {
-            printf("%.*s\n", (int)t.length, t.start);
-            break;
-        } else if (t.type == sting::token_type::END_OF_FILE) {
-            break;
-        } else if (t.line != current_line) {
-            std::cerr << "\n"  << std::setw(2) << std::setfill('0') << t.line << " |";
-            current_line = t.line;
+
+class pratt_parser {
+public:
+    pratt_parser(const std::string& name) :
+        chk(name),
+        index{},
+        panic{}, parse_error{} {}
+
+    bool parse() { // should probably return vm_result.
+        current = &tokens.at(0);
+        get_next_token();
+
+        expression();
+
+        consume(token_type::END_OF_FILE, "Expected end of file");
+        if (panic) return !parse_error;
+
+        chk.write_instruction(opcode::RETURN, current->line);
+        return true;
+    }
+
+    dynamic_array<token>& get_tokens() { return tokens; }
+    chunk& get_chunk() { return chk; }
+private:
+
+    void error_at_token(const token& t, const std::string& msg) {
+        if (panic) return;
+        panic = true;
+        parse_error = true;
+        fprintf(stdout, "Error at line %ld: ", t.line);
+        if (t.type == token_type::END_OF_FILE) {
+            fprintf(stdout, "at end of file.\n");
         } else {
-            printf("token(%.*s), ", (int)t.length, t.start);
+            fprintf(stdout, "%s, got %.*s\n", msg.data(), (int)t.length, t.start);
         }
     }
-    std::cout << std::endl;
 
+    void check_current_token(const token_type expected, const std::string& msg) {
+        if (current->type != expected) {
+            error_at_token(*current, msg);
+        }
+    }
+
+    void get_next_token() {
+        prev = current;
+        current = &tokens.at(index);
+    }
+
+    void consume(token_type type, const char* msg) {
+        get_next_token();
+        if (current->type != type) error_at_token(*current, msg);
+    }
+
+    void expression() {
+    }
+
+    void number() {
+        value val;
+        val.data = std::stod(std::string(prev->start, prev->length));
+        u32 index = chk.load_constant(val);
+        chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
+    }
+
+    void grouping() {
+        // assume { is in previous.
+        expression();
+        consume(token_type::RIGHT_PAREN, "Expected } after expression");
+    }
+
+    void unary() {
+        token_type op_type = prev->type;
+        expression();
+
+        switch(op_type) {
+            case token_type::MINUS: {
+                chk.write_instruction(opcode::NEGATE, prev->line);
+                break;
+            }
+            default: return;
+        }
+    }
+
+    token* prev;
+    token* current;
+    u64 index;
+    dynamic_array<token> tokens;
+    chunk chk;
+    bool parse_error;
+    bool panic;
+};
+
+vm_result interpret(const std::filesystem::path& file) {
+    bool result;
+    std::string source = read_file(file);
+    // std::cout << "------- SOURCE -------\n" << source
+    //           << "----------------------\n";
+    scanner scan(source.data(), source.size());
+    pratt_parser parser(file.string());
+    result = scan.tokenize(parser.get_tokens());
+    if (!result) return vm_result::COMPILE_ERROR;
+
+    result = parser.parse();
+    if (!result) return vm_result::COMPILE_ERROR;
+    virtual_machine vm(parser.get_chunk());
+
+    return vm.run_chunk();
+}
+
+void manage_result(vm_result result) {
+    u8 code = -1;
+    switch (result) {
+        case sting::vm_result::OK: {
+            std::cerr << "Success.\n";
+            code = 0;
+            break;
+        }
+        case sting::vm_result::COMPILE_ERROR: {
+            std::cerr << "Compiler error.\n";
+            break;
+        }
+        case sting::vm_result::RUNTIME_ERROR: {
+            std::cerr << "Runtime error.\n";
+            break;
+        }
+        default:
+            std::cerr << "Unknown interpreter result.\n";
+    }
+    exit(code);
+}
+
+}
+
+i32 main() {
+    const std::filesystem::path file("main.sting");
+    sting::vm_result result = sting::interpret(file);
+    sting::manage_result(result);
     return 0;
 }
