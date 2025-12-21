@@ -120,6 +120,8 @@ public:
 
     // TODO: impl std::expected
     T& at(u64 index) const {
+        // if (index >= _size)
+        //     std::cout << "Index: " << index << "\n";
         panic_if(index >= _size, "Index out of bounds.", -1);
         return _data[index];
     }
@@ -267,6 +269,7 @@ std::ostream& operator<<(std::ostream& os, const instruction& instr) {
 }
 
 struct chunk {
+    chunk() : name("unnamed_chunk") {}
     chunk(const std::string& name) : name(name) {}
     std::string name;
     dynamic_array<instruction> bytecode;
@@ -318,8 +321,7 @@ enum class vm_result { // just result?
     RUNTIME_ERROR
 };
 
-class virtual_machine {
-public:
+struct virtual_machine {
     virtual_machine(const chunk& chk) : chk(chk) {
         pc = chk.bytecode.data();
     }
@@ -394,7 +396,6 @@ public:
         }
     }
 
-private:
     chunk chk;
     instruction* pc;
     dynamic_array<value> value_stack;
@@ -441,6 +442,7 @@ struct token {
     u64 line;
 };
 
+// track column and do multi lines (nested) comments
 class scanner {
 public:
     scanner(u8* source, u64 size) : source(source), current(source), line(1), size(size) {
@@ -522,11 +524,16 @@ public:
             switch (check) {
                 case '/': {
                     if (peek_next() == '/') {
-                        current += 2;
-                        while (!at_end(current) && get_char() != '\n'); // lol
+                        while (!at_end(current) && *current != '\n') {
+                            current++;
+                        }
+                        // while (!at_end(current) && get_char() != '\n');
+                        current++;
                         line++;
+                    } else {
+                        return;
                     }
-                    return;
+                    break;
                 }
                 case ' ':
                 case '\t':
@@ -652,7 +659,7 @@ private:
     u64 size;
 };
 
-enum class precedence {
+enum precedence {
     NONE,
     ASSIGNMENT,  // =
     OR,          // or
@@ -666,18 +673,30 @@ enum class precedence {
     PRIMARY
 };
 
+class pratt_parser;
+using parse_fn = void (pratt_parser::*)();
+
+struct parse_rule {
+    parse_fn prefix;
+    parse_fn infix;
+    precedence prec;
+};
+
+parse_rule* get_rule(token_type type);
 
 class pratt_parser {
 public:
+    pratt_parser() {}
     pratt_parser(const std::string& name) :
         chk(name),
         index{},
-        panic{}, parse_error{} {}
+        panic{}, parse_error{} {
+        prev = 0;
+        current = 0;
+    }
 
     bool parse() { // should probably return vm_result.
         current = &tokens.at(0);
-        get_next_token();
-
         expression();
 
         consume(token_type::END_OF_FILE, "Expected end of file");
@@ -689,7 +708,7 @@ public:
 
     dynamic_array<token>& get_tokens() { return tokens; }
     chunk& get_chunk() { return chk; }
-private:
+// private:
 
     void error_at_token(const token& t, const std::string& msg) {
         if (panic) return;
@@ -697,7 +716,7 @@ private:
         parse_error = true;
         fprintf(stdout, "Error at line %ld: ", t.line);
         if (t.type == token_type::END_OF_FILE) {
-            fprintf(stdout, "at end of file.\n");
+            fprintf(stdout, "%s, issue with end of file.\n", msg.data());
         } else {
             fprintf(stdout, "%s, got %.*s\n", msg.data(), (int)t.length, t.start);
         }
@@ -711,17 +730,44 @@ private:
 
     void get_next_token() {
         prev = current;
-        current = &tokens.at(index);
+        index++;
+        if (index < tokens.size())
+            current = &tokens.at(index);
     }
 
     void consume(token_type type, const char* msg) {
         get_next_token();
-        if (current->type != type) error_at_token(*current, msg);
+        if (prev->type != type) error_at_token(*prev, msg);
+    }
+
+    void parse_precedence(precedence p) {
+        get_next_token();
+        parse_fn prefix_rule = get_rule(prev->type)->prefix;
+
+        if (prefix_rule == nullptr) {
+            error_at_token(*prev, "Expected expression");
+            return;
+        }
+
+        (this->*prefix_rule)();
+
+        int pi = static_cast<int>(p);
+        int ci = static_cast<int>(get_rule(current->type)->prec);
+        while (pi <= ci) {
+            get_next_token();
+            parse_fn infix_rule = get_rule(prev->type)->infix;
+            (this->*infix_rule)();
+            ci = static_cast<int>(get_rule(current->type)->prec);
+        }
     }
 
     void expression() {
+        // if (current->type == token_type::END_OF_FILE) // hack
+        //     return;
+        parse_precedence(precedence::ASSIGNMENT);
     }
 
+    // gets the number, emits LOAD_CONST and pushes number onto value stack
     void number() {
         value val;
         val.data = std::stod(std::string(prev->start, prev->length));
@@ -732,11 +778,12 @@ private:
     void grouping() {
         // assume { is in previous.
         expression();
-        consume(token_type::RIGHT_PAREN, "Expected } after expression");
+        consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
     }
 
     void unary() {
         token_type op_type = prev->type;
+        parse_precedence(precedence::UNARY);
         expression();
 
         switch(op_type) {
@@ -744,7 +791,36 @@ private:
                 chk.write_instruction(opcode::NEGATE, prev->line);
                 break;
             }
-            default: return;
+            default:
+                std::cout << "Unknown unary\n";
+                return;
+        }
+    }
+
+    void binary() {
+        token_type type = prev->type;
+        parse_rule* rule = get_rule(type);
+        parse_precedence(static_cast<precedence>(rule->prec + 1));
+
+        switch (type) {
+            case token_type::PLUS: {
+                chk.write_instruction(opcode::ADD, prev->line);
+                break;
+            }
+            case token_type::MINUS: {
+                chk.write_instruction(opcode::SUBTRACT, prev->line);
+                break;
+            }
+            case token_type::SLASH: {
+                chk.write_instruction(opcode::DIVIDE, prev->line);
+                break;
+            }
+            case token_type::STAR: {
+                chk.write_instruction(opcode::MULTIPLY, prev->line);
+                break;
+            }
+            default:
+                break;
         }
     }
 
@@ -757,20 +833,81 @@ private:
     bool panic;
 };
 
+parse_rule rules[] = { // order matters here, indexing with token_type
+  {&pratt_parser::grouping, nullptr, precedence::NONE}, // LEFT PAREN
+  {nullptr,     nullptr,   precedence::NONE},   // [RIGHT_PAREN]
+  {nullptr,     nullptr,   precedence::NONE},   // [LEFT_BRACE]
+  {nullptr,     nullptr,   precedence::NONE},   // [RIGHT_BRACE]
+  {nullptr,     nullptr,   precedence::NONE},   // [COMMA]
+  {nullptr,     nullptr,   precedence::NONE},   // [DOT]
+  {&pratt_parser::unary,    &pratt_parser::binary, precedence::TERM},   // [MINUS]
+  {nullptr,     &pratt_parser::binary, precedence::TERM},   // [PLUS]
+  {nullptr,     nullptr,   precedence::NONE},   // [SEMICOLON]
+  {nullptr,     &pratt_parser::binary, precedence::FACTOR}, // [SLASH]
+  {nullptr,     &pratt_parser::binary, precedence::FACTOR}, // [STAR]
+  {nullptr,     nullptr,   precedence::NONE},   // [BANG]
+  {nullptr,     nullptr,   precedence::NONE},   // [BANG_EQUAL]
+  {nullptr,     nullptr,   precedence::NONE},   // [EQUAL]
+  {nullptr,     nullptr,   precedence::NONE},   // [EQUAL_EQUAL]
+  {nullptr,     nullptr,   precedence::NONE},   // [GREATER]
+  {nullptr,     nullptr,   precedence::NONE},   // [GREATER_EQUAL]
+  {nullptr,     nullptr,   precedence::NONE},   // [LESS]
+  {nullptr,     nullptr,   precedence::NONE},   // [LESS_EQUAL]
+  {nullptr,     nullptr,   precedence::NONE},   // [IDENTIFIER]
+  {nullptr,     nullptr,   precedence::NONE},   // [STRING]
+  {&pratt_parser::number,   nullptr,   precedence::NONE},   // [NUMBER]
+  {nullptr,     nullptr,   precedence::NONE},   // [AND]
+  {nullptr,     nullptr,   precedence::NONE},   // [CLASS]
+  {nullptr,     nullptr,   precedence::NONE},   // [ELSE]
+  {nullptr,     nullptr,   precedence::NONE},   // [FALSE]
+  {nullptr,     nullptr,   precedence::NONE},   // [FOR]
+  {nullptr,     nullptr,   precedence::NONE},   // [FUN]
+  {nullptr,     nullptr,   precedence::NONE},   // [IF]
+  {nullptr,     nullptr,   precedence::NONE},   // [NIL]
+  {nullptr,     nullptr,   precedence::NONE},   // [OR]
+  {nullptr,     nullptr,   precedence::NONE},   // [PRINT]
+  {nullptr,     nullptr,   precedence::NONE},   // [RETURN]
+  {nullptr,     nullptr,   precedence::NONE},   // [SUPER]
+  {nullptr,     nullptr,   precedence::NONE},   // [THIS]
+  {nullptr,     nullptr,   precedence::NONE},   // [TRUE]
+  {nullptr,     nullptr,   precedence::NONE},   // [VAR]
+  {nullptr,     nullptr,   precedence::NONE},   // [WHILE]
+  {nullptr,     nullptr,   precedence::NONE},   // [ERROR]
+  {nullptr,     nullptr,   precedence::NONE},   // [EOF]
+};
+
+parse_rule* get_rule(token_type type) {
+    return &rules[static_cast<u64>(type)];
+}
+
 vm_result interpret(const std::filesystem::path& file) {
     bool result;
     std::string source = read_file(file);
-    // std::cout << "------- SOURCE -------\n" << source
-    //           << "----------------------\n";
+    std::cout << "------- SOURCE -------\n" << source
+              << "----------------------\n";
     scanner scan(source.data(), source.size());
     pratt_parser parser(file.string());
     result = scan.tokenize(parser.get_tokens());
     if (!result) return vm_result::COMPILE_ERROR;
 
+    const dynamic_array<token>& ts = parser.get_tokens();
+    int line = 0;
+    for (u64 i{}; i < ts.size(); i++) {
+        if (ts.at(i).type == token_type::END_OF_FILE) {
+            break;
+        } else if (line != ts.at(i).line) {
+            line = ts.at(i).line;
+            std::cout << "\n" << line << ": ";
+        }
+        printf("token(%.*s), ", (int)ts.at(i).length, ts.at(i).start);
+    }
+    std::cout << "\n";
+
     result = parser.parse();
     if (!result) return vm_result::COMPILE_ERROR;
     virtual_machine vm(parser.get_chunk());
 
+    std::cout << vm.chk << "\n";
     return vm.run_chunk();
 }
 
@@ -796,9 +933,10 @@ void manage_result(vm_result result) {
     exit(code);
 }
 
-}
+} // namespace sting
 
 i32 main() {
+
     const std::filesystem::path file("main.sting");
     sting::vm_result result = sting::interpret(file);
     sting::manage_result(result);
