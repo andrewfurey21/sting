@@ -381,7 +381,7 @@ struct virtual_machine {
                 case opcode::SUBTRACT: {
                     const value a = value_stack.pop_back();
                     const value b = value_stack.pop_back();
-                    const value c = a - b;
+                    const value c = b - a;
                     value_stack.push_back(c);
                     break;
                 }
@@ -660,17 +660,17 @@ private:
 };
 
 enum precedence {
-    NONE,
-    ASSIGNMENT,  // =
-    OR,          // or
-    AND,         // and
-    EQUALITY,    // == !=
-    COMPARISON,  // < > <= >=
-    TERM,        // + -
-    FACTOR,      // * /
-    UNARY,       // ! -
-    CALL,        // . ()
-    PRIMARY
+    NONE,        // 0
+    ASSIGNMENT,  // 1 =
+    OR,          // 2 or
+    AND,         // 3 and
+    EQUALITY,    // 4 == !=
+    COMPARISON,  // 5 < > <= >=
+    TERM,        // 6 + -
+    FACTOR,      // 7 * /
+    UNARY,       // 8 ! -
+    CALL,        // 9 . ()
+    PRIMARY      // 10
 };
 
 class pratt_parser;
@@ -762,8 +762,6 @@ public:
     }
 
     void expression() {
-        // if (current->type == token_type::END_OF_FILE) // hack
-        //     return;
         parse_precedence(precedence::ASSIGNMENT);
     }
 
@@ -784,7 +782,6 @@ public:
     void unary() {
         token_type op_type = prev->type;
         parse_precedence(precedence::UNARY);
-        expression();
 
         switch(op_type) {
             case token_type::MINUS: {
