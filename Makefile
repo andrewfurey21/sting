@@ -1,2 +1,6 @@
+CXX = c++17
+FLAGS = -g -O0
+
 all:
-	g++ -o sting -std=c++17 ./src/main.cpp -g -O0
+	g++ -c -o ./build/main.o ./src/main.cpp -std=$(CXX) $(FLAGS)
+	g++ -o sting ./build/*.o
