@@ -42,7 +42,9 @@ const u64 DEFAULT_SIZE = 1 << 8;
 template <typename T>
 class dynarray {
 public:
+
     dynarray() : dynarray(DEFAULT_SIZE) {}
+
     dynarray(u64 capacity) :
         _capacity(capacity),
         _size(0)
@@ -94,17 +96,18 @@ public:
         panic_if(index >= _size, "Index out of bounds.", -1);
         return _data[index];
     }
+
     void push_back(const T& x) {
-        _size++;
-        if (_capacity <= _size) {
+        if (_capacity <= _size + 1) {
             _capacity *= 2;
             resize_array();
         }
-        at(_size - 1) = x;
+        _size++;
+        this->at(_size - 1) = x;
     }
 
     T pop_back() {
-        T ret = at(_size - 1);
+        T ret = this->at(_size - 1);
         _size--;
         _data[_size].~T();
         return ret;
@@ -114,6 +117,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const dynarray<U>& other);
 
 private:
+
     T* allocate_capacity() {
         return static_cast<T*>(malloc(sizeof(T) * this->_capacity));
     }
@@ -131,6 +135,7 @@ private:
         free_array(_data);
         _data = new_data;
     }
+
     void free_array(T* data) {
         for (u64 i{0}; i < this->size(); i++) {
             data[i].~T();
@@ -138,6 +143,7 @@ private:
         free(data);
         data = nullptr;
     }
+
     void steal_array(dynarray&& other) {
         this->_capacity = exchange(other._capacity, 1);
         this->_size = exchange(other._size, 0);

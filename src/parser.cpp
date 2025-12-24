@@ -91,7 +91,7 @@ void parser::number() {
 }
 
 void parser::grouping() {
-    // assume { is in previous.
+    // assume ( is in previous.
     expression();
     consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
 }
