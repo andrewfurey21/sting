@@ -1,4 +1,4 @@
-#include "../include/sting.hpp"
+#include "../include/scanner.hpp"
 
 /*
 
@@ -211,7 +211,5 @@ bool scanner::is_alpha(u8 ch) {
 bool scanner::is_digit(u8 ch) { return '0' <= ch && ch <= '9'; }
 
 bool scanner::at_end(u8* char_ptr) { return (char_ptr - source) == size; }
-
-
 
 } // namespace sting

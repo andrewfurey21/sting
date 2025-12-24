@@ -2,7 +2,8 @@
 
 namespace sting {
 
-parser::parser() {}
+parser::parser() : parser("unknown_chunk") {}
+
 parser::parser(const std::string& name) :
         chk(name),
         index{},
@@ -12,7 +13,7 @@ parser::parser(const std::string& name) :
     current = 0;
 }
 
-bool parser::parse() { // should probably return vm_result.
+bool parser::parse() {
     current = &tokens.at(0);
     expression();
 

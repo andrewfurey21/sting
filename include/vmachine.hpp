@@ -3,7 +3,6 @@
 
 #include "utilities.hpp"
 #include "dynarray.hpp"
-#include "scanner.hpp"
 
 namespace sting {
 
@@ -48,8 +47,6 @@ struct instruction {
     friend std::ostream& operator<<(std::ostream& os, const instruction& instr);
 };
 
-// std::ostream& operator<<(std::ostream& os, const instruction& instr);
-
 struct chunk {
     chunk() : name("unnamed_chunk") {}
     chunk(const std::string& name) : name(name) {}
@@ -66,7 +63,6 @@ struct chunk {
             .c = c
         };
 
-        // lines.size() == bytecode.size();
         lines.push_back(line);
         bytecode.push_back(instr);
     }
@@ -79,8 +75,6 @@ struct chunk {
 
     friend std::ostream& operator<<(std::ostream& os, const chunk& chk);
 };
-
-// std::ostream& operator<<(std::ostream& os, const chunk& chk);
 
 enum class vm_result { // just result?
     OK,

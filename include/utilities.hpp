@@ -21,6 +21,8 @@ using i64 = int64_t;
 using i32 = int32_t;
 using f32 = float_t;
 
+namespace sting {
+
 inline void panic_if(bool expr, const std::string& msg, const i32 code) {
     if (!expr) return;
     std::cerr << "---------------- ERROR ----------------\n" << "Code: "
@@ -40,5 +42,7 @@ inline std::string read_file(const std::filesystem::path& path) {
     free(data);
     return str;
 }
+
+} // namespace sting
 
 #endif
