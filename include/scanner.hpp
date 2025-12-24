@@ -1,4 +1,8 @@
-#include "sting.hpp"
+#ifndef SCANNER_HPP
+#define SCANNER_HPP
+
+#include "utilities.hpp"
+#include "dynarray.hpp"
 
 namespace sting {
 
@@ -40,7 +44,7 @@ public:
         line(1),
         size(size) { }
 
-    bool tokenize(dynamic_array<token>& tokens);
+    bool tokenize(dynarray<token>& tokens);
 
     token next_token();
 
@@ -80,3 +84,5 @@ private:
 
 
 } // namespace sting
+
+#endif

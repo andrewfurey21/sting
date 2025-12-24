@@ -1,4 +1,4 @@
-#include "../include/scanner.hpp"
+#include "../include/sting.hpp"
 
 /*
 
@@ -11,7 +11,7 @@ Don't like my use of lambdas.
 
 namespace sting {
 
-bool scanner::tokenize(dynamic_array<token>& tokens) {
+bool scanner::tokenize(dynarray<token>& tokens) {
     for (;;) {
         token t = next_token();
         tokens.push_back(t);
