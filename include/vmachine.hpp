@@ -3,6 +3,7 @@
 
 #include "utilities.hpp"
 #include "dynarray.hpp"
+#include "value.hpp"
 
 namespace sting {
 
@@ -17,26 +18,6 @@ enum class opcode {
 };
 
 std::string opcode_to_string(opcode op);
-
-struct value {
-    f32 data;
-
-    value operator+(const value& other) const {
-        return value { .data = this->data + other.data };
-    }
-
-    value operator-(const value& other) const {
-        return value { .data = this->data - other.data };
-    }
-
-    value operator*(const value& other) const {
-        return value { .data = this->data * other.data };
-    }
-
-    value operator/(const value& other) const {
-        return value { .data = this->data / other.data };
-    }
-};
 
 struct instruction {
     opcode op;
@@ -96,7 +77,7 @@ struct vmachine {
                 case opcode::RETURN: {
                     if (value_stack.size() > 0) {
                         const value& val = value_stack.at(value_stack.size() - 1);
-                        std::cerr << val.data << "\n";
+                        std::cerr << val.number() << "\n";
                     }
                     return vm_result::OK;
                 }
@@ -110,8 +91,8 @@ struct vmachine {
 
                 case opcode::NEGATE: {
                     value a = value_stack.pop_back();
-                    a.data *= -1;
-                    value_stack.push_back(a);
+                    value b = a * -1.0f;
+                    value_stack.push_back(b);
                     break;
                 }
 

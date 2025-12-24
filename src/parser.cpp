@@ -2,6 +2,8 @@
 
 namespace sting {
 
+// TODO: should just be a function, pass prev+current explicitly.
+
 parser::parser() : parser("unknown_chunk") {}
 
 parser::parser(const std::string& name) :
@@ -50,6 +52,7 @@ void parser::get_next_token() {
     index++;
     if (index < tokens.size())
         current = &tokens.at(index);
+    // TODO: deal with error tokens.
 }
 
 void parser::consume(token_type type, const char* msg) {
@@ -84,8 +87,7 @@ void parser::expression() {
 
 // gets the number, emits LOAD_CONST and pushes number onto value stack
 void parser::number() {
-    value val;
-    val.data = std::stod(std::string(prev->start, prev->length));
+    const value val = std::stof(std::string(prev->start, prev->length));
     u32 index = chk.load_constant(val);
     chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
 }
@@ -114,6 +116,8 @@ void parser::unary() {
 void parser::binary() {
     token_type type = prev->type;
     parse_rule* rule = get_rule(type);
+
+    // + 1 => left associativity. If +, only */ and above can be parsed, not +
     parse_precedence(static_cast<precedence>(rule->prec + 1));
 
     switch (type) {
@@ -137,9 +141,20 @@ void parser::binary() {
             break;
     }
 }
-
+    // NONE       0
+    // ASSIGNMENT 1 =
+    // OR         2 or
+    // AND        3 and
+    // EQUALITY   4 == !=
+    // COMPARISON 5 < > <= >=
+    // TERM       6 + -
+    // FACTOR     7 * /
+    // UNARY      8 ! -
+    // CALL       9 . ()
+    // PRIMARY    10
 parse_rule rules[] = { // order matters here, indexing with token_type
-  {&parser::grouping, nullptr, precedence::NONE}, // LEFT PAREN
+  // prefix, infix, precedence
+  {&parser::grouping, nullptr, precedence::NONE}, // [LEFT PAREN]
   {nullptr,     nullptr,   precedence::NONE},   // [RIGHT_PAREN]
   {nullptr,     nullptr,   precedence::NONE},   // [LEFT_BRACE]
   {nullptr,     nullptr,   precedence::NONE},   // [RIGHT_BRACE]

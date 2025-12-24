@@ -38,10 +38,13 @@ std::ostream& operator<<(std::ostream& os, const chunk& chk) {
         const instruction& instr = chk.bytecode.at(i);
         os << instr << "\t";
         switch (instr.op) {
-            case opcode::LOAD_CONST:
-                os << "Value(" << chk.constant_pool.at(instr.a).data << ")";
-            default:
+            case opcode::LOAD_CONST: {
+                f32 data = chk.constant_pool.at(instr.a).number();
+                os << "Value(" << data << ")";
                 os << "\t";
+            }
+            default: {
+            }
         }
         os << "\tline: " << chk.lines.at(i) << "\n";
     }

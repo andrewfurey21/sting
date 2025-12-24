@@ -1,6 +1,7 @@
 #ifndef UTILITIES_HPP
 #define UTILITIES_HPP
 
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -29,6 +30,10 @@ inline void panic_if(bool expr, const std::string& msg, const i32 code) {
         << code << "\n" << msg << "\n"
         << "---------------------------------------\n";
     exit(code);
+}
+
+inline void panic(const std::string& msg, const i32 code = -1) {
+    panic_if(true, msg, code);
 }
 
 inline std::string read_file(const std::filesystem::path& path) {
