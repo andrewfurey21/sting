@@ -92,6 +92,25 @@ void parser::number() {
     chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
 }
 
+void parser::literal() {
+    switch(prev->type) {
+        case token_type::TRUE: {
+            chk.write_instruction(opcode::TRUE, 0);
+            break;
+        }
+        case token_type::FALSE: {
+            chk.write_instruction(opcode::FALSE, 0);
+            break;
+        }
+        case token_type::NIL: {
+            chk.write_instruction(opcode::NIL, 0);
+            break;
+        }
+        default:
+            return;
+    }
+}
+
 void parser::grouping() {
     // assume ( is in previous.
     expression();
@@ -179,17 +198,17 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     nullptr,   precedence::NONE},   // [AND]
   {nullptr,     nullptr,   precedence::NONE},   // [CLASS]
   {nullptr,     nullptr,   precedence::NONE},   // [ELSE]
-  {nullptr,     nullptr,   precedence::NONE},   // [FALSE]
+  {&parser::literal,     nullptr,   precedence::NONE},   // [FALSE]
   {nullptr,     nullptr,   precedence::NONE},   // [FOR]
   {nullptr,     nullptr,   precedence::NONE},   // [FUN]
   {nullptr,     nullptr,   precedence::NONE},   // [IF]
-  {nullptr,     nullptr,   precedence::NONE},   // [NIL]
+  {&parser::literal,     nullptr,   precedence::NONE},   // [NIL]
   {nullptr,     nullptr,   precedence::NONE},   // [OR]
   {nullptr,     nullptr,   precedence::NONE},   // [PRINT]
   {nullptr,     nullptr,   precedence::NONE},   // [RETURN]
   {nullptr,     nullptr,   precedence::NONE},   // [SUPER]
   {nullptr,     nullptr,   precedence::NONE},   // [THIS]
-  {nullptr,     nullptr,   precedence::NONE},   // [TRUE]
+  {&parser::literal,     nullptr,   precedence::NONE},   // [TRUE]
   {nullptr,     nullptr,   precedence::NONE},   // [VAR]
   {nullptr,     nullptr,   precedence::NONE},   // [WHILE]
   {nullptr,     nullptr,   precedence::NONE},   // [ERROR]

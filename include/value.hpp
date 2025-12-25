@@ -28,6 +28,7 @@ private:
     };
 
     friend void check_type(const value& a, const value& b);
+    friend std::ostream& operator<<(std::ostream& os, const value& v);
 };
 
 

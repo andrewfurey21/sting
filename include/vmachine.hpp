@@ -15,6 +15,9 @@ enum class opcode {
     MULTIPLY,
     DIVIDE,
     SUBTRACT,
+    TRUE,
+    FALSE,
+    NIL
 };
 
 std::string opcode_to_string(opcode op);
@@ -77,7 +80,7 @@ struct vmachine {
                 case opcode::RETURN: {
                     if (value_stack.size() > 0) {
                         const value& val = value_stack.at(value_stack.size() - 1);
-                        std::cerr << val.number() << "\n";
+                        std::cerr << val << "\n";
                     }
                     return vm_result::OK;
                 }
@@ -128,6 +131,22 @@ struct vmachine {
                     break;
                 }
 
+                case opcode::TRUE: {
+                    const value t = value(static_cast<u8>(true));
+                    value_stack.push_back(t);
+                    break;
+                }
+
+                case opcode::FALSE: {
+                    const value t = value(static_cast<u8>(false));
+                    value_stack.push_back(t);
+                    break;
+                }
+
+                case opcode::NIL: {
+                    value_stack.push_back(value());
+                    break;
+                }
 
                 default: {
                     std::stringstream errMessage;

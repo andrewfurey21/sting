@@ -97,6 +97,28 @@ value value::operator/(const value& other) const {
     return value();
 }
 
+std::ostream& operator<<(std::ostream& os, const value& v) {
+    switch (v.type) {
+        case value::BOOLEAN: {
+            os << (v.b ? "true" : "false");
+            break;
+        }
+        case value::NIL: {
+            os << "nil";
+            break;
+        }
+        case value::NUMBER: {
+            os << v.f;
+            break;
+        }
+
+        default:
+            panic("Unknown value type");
+    }
+
+    return os;
+}
+
 void check_type(const value &a, const value &b) {
     panic_if(a.type != b.type, "Type Error", -1);
 }
