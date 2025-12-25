@@ -11,6 +11,7 @@ enum class opcode {
     RETURN,
     LOAD_CONST,
     NEGATE,
+    NOT,
     ADD,
     MULTIPLY,
     DIVIDE,
@@ -96,6 +97,12 @@ struct vmachine {
                     value a = value_stack.pop_back();
                     value b = a * -1.0f;
                     value_stack.push_back(b);
+                    break;
+                }
+
+                case opcode::NOT: {
+                    value a = value_stack.pop_back();
+                    value_stack.push_back(!a);
                     break;
                 }
 

@@ -2,7 +2,6 @@
 
 namespace sting {
 
-// should be std::expected
 std::string opcode_to_string(opcode op) {
     switch (op) {
         case opcode::RETURN:
@@ -11,6 +10,8 @@ std::string opcode_to_string(opcode op) {
             return "CONST";
         case opcode::NEGATE:
             return "NEGATE";
+        case opcode::NOT:
+            return "NOT";
         case opcode::ADD:
             return "ADD";
         case opcode::MULTIPLY:
@@ -19,14 +20,17 @@ std::string opcode_to_string(opcode op) {
             return "DIVIDE";
         case opcode::SUBTRACT:
             return "SUBTRACT";
+        case opcode::TRUE:
+            return "TRUE";
+        case opcode::FALSE:
+            return "FALSE";
+        case opcode::NIL:
+            return "NIL";
         default:
             return "UNKNOWN";
     }
 }
 
-// NOTE: could possibly be a base class whose derivatives point to memory of some size
-
-// NOTE: might just have a std::array impl? (heap allocated though)
 std::ostream& operator<<(std::ostream& os, const instruction& instr) {
     os << opcode_to_string(instr.op) << ": " << instr.a << ", " << instr.b << ", " << instr.c << ", ";
     return os;

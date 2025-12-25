@@ -19,82 +19,41 @@ value::value(u8 b) {
 
 value value::operator+(const value& other) const {
     check_type(*this, other);
-    if (this->type == NIL || other.type == NIL) {
-        panic("Type error: cannot add nil type");
+    if (this->type != NUMBER || other.type != NUMBER) {
+        panic("Type error: cannot add non-number type");
     }
-
-    switch (this->type) {
-        case NUMBER: {
-            return value(static_cast<f32>(this->number() + other.number()));
-        }
-        case BOOLEAN: {
-            return value(static_cast<u8>(this->byte() + other.byte()));
-        }
-        default:
-            panic("Type error: adding unknown types");
-    }
-
-    return value();
+    return value(static_cast<f32>(this->number() + other.number()));
 }
 
 value value::operator-(const value& other) const {
     check_type(*this, other);
-    if (this->type == NIL || other.type == NIL) {
-        panic("Type error: cannot subtract nil type");
+    if (this->type != NUMBER || other.type != NUMBER) {
+        panic("Type error: cannot subtract non-number type");
     }
-
-    switch (this->type) {
-        case NUMBER: {
-            return value(static_cast<f32>(this->number() - other.number()));
-        }
-        case BOOLEAN: {
-            return value(static_cast<u8>(this->byte() - other.byte()));
-        }
-        default:
-            panic("Type error: subtracting unknown types");
-    }
-
-    return value();
+    return value(static_cast<f32>(this->number() - other.number()));
 }
 
 value value::operator*(const value& other) const {
     check_type(*this, other);
-    if (this->type == NIL || other.type == NIL) {
-        panic("Type error: cannot multiply nil type");
+    if (this->type != NUMBER || other.type != NUMBER) {
+        panic("Type error: cannot multiply non-number type");
     }
-
-    switch (this->type) {
-        case NUMBER: {
-            return value(static_cast<f32>(this->number() * other.number()));
-        }
-        case BOOLEAN: {
-            return value(static_cast<u8>(this->byte() * other.byte()));
-        }
-        default:
-            panic("Type error: multiplying unknown types");
-    }
-
-    return value();
+    return value(static_cast<f32>(this->number() * other.number()));
 }
 
 value value::operator/(const value& other) const {
     check_type(*this, other);
-    if (this->type == NIL || other.type == NIL) {
-        panic("Type error: cannot divide nil type");
+    if (this->type != NUMBER || other.type != NUMBER) {
+        panic("Type error: cannot divide non-number type");
     }
+    return value(static_cast<f32>(this->number() / other.number()));
+}
 
-    switch (this->type) {
-        case NUMBER: {
-            return value(static_cast<f32>(this->number() / other.number()));
-        }
-        case BOOLEAN: {
-            return value(static_cast<u8>(this->byte() / other.byte()));
-        }
-        default:
-            panic("Type error: dividing unknown types");
+value value::operator!() const {
+    if (this->type != BOOLEAN) {
+        panic("Type error: cannot logical not non-boolean type");
     }
-
-    return value();
+    return value(static_cast<u8>(this->b ^ 0x1));
 }
 
 std::ostream& operator<<(std::ostream& os, const value& v) {

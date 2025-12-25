@@ -12,15 +12,18 @@ public:
     value operator-(const value& other) const;
     value operator*(const value& other) const;
     value operator/(const value& other) const;
+    value operator!() const;
 
     f32 number() const { return f; }
     u8 byte() const { return b; }
-private:
+
     enum {
         BOOLEAN,
         NIL,
         NUMBER,
     } type;
+
+private:
 
     union {
         f32 f;

@@ -126,6 +126,10 @@ void parser::unary() {
             chk.write_instruction(opcode::NEGATE, prev->line);
             break;
         }
+        case token_type::BANG: {
+            chk.write_instruction(opcode::NOT, prev->line);
+            break;
+        }
         default:
             std::cout << "Unknown unary\n";
             return;
@@ -184,7 +188,7 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     nullptr,   precedence::NONE},   // [SEMICOLON]
   {nullptr,     &parser::binary, precedence::FACTOR}, // [SLASH]
   {nullptr,     &parser::binary, precedence::FACTOR}, // [STAR]
-  {nullptr,     nullptr,   precedence::NONE},   // [BANG]
+  {&parser::unary,     nullptr,   precedence::NONE},   // [BANG]
   {nullptr,     nullptr,   precedence::NONE},   // [BANG_EQUAL]
   {nullptr,     nullptr,   precedence::NONE},   // [EQUAL]
   {nullptr,     nullptr,   precedence::NONE},   // [EQUAL_EQUAL]
