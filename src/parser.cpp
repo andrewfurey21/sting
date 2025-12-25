@@ -160,8 +160,16 @@ void parser::binary() {
             chk.write_instruction(opcode::MULTIPLY, prev->line);
             break;
         }
-        default:
+        case token_type::EQUAL_EQUAL: {
+            chk.write_instruction(opcode::EQUAL, prev->line);
             break;
+        }
+        case token_type::GREATER: {
+            chk.write_instruction(opcode::GREATER, prev->line);
+            break;
+        }
+        default:
+            panic_if(true, "Unknown binary operator", -1);
     }
 }
     // NONE       0
@@ -189,13 +197,13 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     &parser::binary, precedence::FACTOR}, // [SLASH]
   {nullptr,     &parser::binary, precedence::FACTOR}, // [STAR]
   {&parser::unary,     nullptr,   precedence::NONE},   // [BANG]
-  {nullptr,     nullptr,   precedence::NONE},   // [BANG_EQUAL]
+  {nullptr,     &parser::binary,   precedence::EQUALITY},   // [BANG_EQUAL]
   {nullptr,     nullptr,   precedence::NONE},   // [EQUAL]
-  {nullptr,     nullptr,   precedence::NONE},   // [EQUAL_EQUAL]
-  {nullptr,     nullptr,   precedence::NONE},   // [GREATER]
-  {nullptr,     nullptr,   precedence::NONE},   // [GREATER_EQUAL]
-  {nullptr,     nullptr,   precedence::NONE},   // [LESS]
-  {nullptr,     nullptr,   precedence::NONE},   // [LESS_EQUAL]
+  {nullptr,     &parser::binary,   precedence::EQUALITY},   // [EQUAL_EQUAL]
+  {nullptr,     &parser::binary,   precedence::COMPARISON},   // [GREATER]
+  {nullptr,     &parser::binary,   precedence::COMPARISON},   // [GREATER_EQUAL]
+  {nullptr,     &parser::binary,   precedence::COMPARISON},   // [LESS]
+  {nullptr,     &parser::binary,   precedence::COMPARISON},   // [LESS_EQUAL]
   {nullptr,     nullptr,   precedence::NONE},   // [IDENTIFIER]
   {nullptr,     nullptr,   precedence::NONE},   // [STRING]
   {&parser::number,   nullptr,   precedence::NONE},   // [NUMBER]

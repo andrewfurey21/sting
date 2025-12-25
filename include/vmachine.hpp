@@ -18,7 +18,10 @@ enum class opcode {
     SUBTRACT,
     TRUE,
     FALSE,
-    NIL
+    NIL,
+    GREATER,
+    LESS,
+    EQUAL,
 };
 
 std::string opcode_to_string(opcode op);
@@ -152,6 +155,20 @@ struct vmachine {
 
                 case opcode::NIL: {
                     value_stack.push_back(value());
+                    break;
+                }
+
+                case opcode::EQUAL: {
+                    const value b = value_stack.pop_back();
+                    const value a = value_stack.pop_back();
+                    value_stack.push_back(a == b);
+                    break;
+                }
+
+                case opcode::GREATER: {
+                    const value b = value_stack.pop_back();
+                    const value a = value_stack.pop_back();
+                    value_stack.push_back(a > b);
                     break;
                 }
 

@@ -18,17 +18,17 @@ vm_result interpret(const std::filesystem::path& file, bool debug) {
     const dynarray<token>& ts = p.get_tokens();
 
     if (debug) {
-        int line = 0;
-        for (u64 i{}; i < ts.size(); i++) {
-            if (ts.at(i).type == token_type::END_OF_FILE) {
-                break;
-            } else if (line != ts.at(i).line) {
-                line = ts.at(i).line;
-                std::cout << "\n" << line << ": ";
-            }
-            printf("token(%.*s), ", (int)ts.at(i).length, ts.at(i).start);
-        }
-        std::cout << "\n";
+        // int line = 0;
+        // for (u64 i{}; i < ts.size(); i++) {
+        //     if (ts.at(i).type == token_type::END_OF_FILE) {
+        //         break;
+        //     } else if (line != ts.at(i).line) {
+        //         line = ts.at(i).line;
+        //         std::cout << "\n" << line << ": ";
+        //     }
+        //     printf("token(%.*s), ", (int)ts.at(i).length, ts.at(i).start);
+        // }
+        // std::cout << "\n";
     }
 
     result = p.parse();

@@ -56,6 +56,27 @@ value value::operator!() const {
     return value(static_cast<u8>(this->b ^ 0x1));
 }
 
+value value::operator==(const value& other) const {
+    check_type(*this, other);
+    if (this->type == NIL) {
+        return value(static_cast<u8>(true));
+    } else if (this->type == BOOLEAN) {
+        return value(static_cast<u8>(this->b == other.b));
+    } else {
+        return value(static_cast<f32>(this->f == other.f));
+    }
+}
+
+value value::operator>(const value& other) const {
+    check_type(*this, other);
+    if (this->type == NIL) {
+        panic("Type error: > not supported for nil type");
+    } else if (this->type == BOOLEAN) {
+        return value(static_cast<u8>(this->b > other.b));
+    }
+    return value(static_cast<f32>(this->f > other.f));
+}
+
 std::ostream& operator<<(std::ostream& os, const value& v) {
     switch (v.type) {
         case value::BOOLEAN: {

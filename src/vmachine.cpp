@@ -26,6 +26,12 @@ std::string opcode_to_string(opcode op) {
             return "FALSE";
         case opcode::NIL:
             return "NIL";
+        case opcode::GREATER:
+            return "GREATER";
+        case opcode::LESS:
+            return "LESS";
+        case opcode::EQUAL:
+            return "EQUAL";
         default:
             return "UNKNOWN";
     }
