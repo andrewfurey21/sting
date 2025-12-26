@@ -5,37 +5,6 @@
 
 namespace sting {
 
-template <typename T, typename U = T>
-T exchange(T& other, U&& newval) {
-    T old = other;
-    other = newval;
-    return old;
-}
-
-template <typename T>
-struct remove_reference {
-    using type = T;
-};
-
-template <typename T>
-struct remove_reference<T&> {
-    using type = T;
-};
-
-template <typename T>
-struct remove_reference<T&&> {
-    using type = T;
-};
-
-// identical to std::move, but steal sounds better
-// question: why do we need the remove_reference indirection?
-// is decltype auto because we don't know the return type
-// until we get to return?
-template <typename T>
-decltype(auto) steal(T&& value) {
-    return static_cast<typename remove_reference<T>::type&&>(value);
-}
-
 const u64 DEFAULT_SIZE = 1 << 8;
 // currently just a stack, can only push/pop.
 // look into semistable::vector

@@ -1,0 +1,93 @@
+#include "../include/object.hpp"
+
+namespace sting {
+
+void string::allocate_size() {
+    free(_data);
+    // std::cerr << "deleted data\n" << std::flush;
+    _data = reinterpret_cast<u8*>(malloc(_size * sizeof(u8)));
+    std::cerr << "allocated data\n" << std::flush;
+}
+
+void string::copy(u8* dest, const u8* src, const u64 size) {
+    for (u64 i{}; i < size; i++)
+        dest[i] = src[i];
+}
+
+string::string() : _data(nullptr), _size(0) {}
+
+string::string(u64 size) : string() {
+    _size = size;
+    allocate_size();
+}
+
+string::string(const u8* other) : string() {
+    _size = strlen(other);
+    allocate_size();
+    copy(_data, other, _size);
+}
+
+string::~string() {
+    free(_data);
+    std::cerr << "deleted data\n" << std::flush;
+}
+
+string::string(const string& other) : _size(other._size), _data(nullptr) {
+    free(_data);
+    allocate_size();
+    copy(_data, other.data(), other.size());
+}
+
+string::string(string&& other) {
+    _size = exchange(other._size, 0);
+    _data = exchange(other._data, nullptr);
+}
+
+string& string::operator=(const string& other) {
+    if (this != &other) {
+        free(_data);
+        _size = other._size;
+        allocate_size();
+        copy(_data, other.data(), other.size());
+    }
+    return *this;
+}
+
+string& string::operator=(string&& other) {
+    if (this != &other) {
+        free(_data);
+        _size = exchange(other._size, 0);
+        _data = exchange(other._data, nullptr);
+    }
+    return *this;
+}
+
+char string::at(u64 index) const {
+    panic_if(index >= _size, "string::at(): index out of bounds", -1);
+    return _data[index];
+}
+
+string string::operator+(const string& other) {
+    string concat(_size + other.size());
+    copy(concat._data, _data, _size);
+    copy(concat._data + _size, other.data(), other.size());
+    return concat;
+}
+
+void string::operator+=(const string& other) {
+    string concat(_size + other._size);
+    copy(concat._data, _data, _size);
+    copy(concat._data + _size, other.data(), other.size());
+
+    _size = exchange(concat._size, _size);
+    _data = exchange(concat._data, _data);
+}
+
+std::ostream& operator<<(std::ostream& os, const string& str) {
+    for (u64 i{}; i < str._size; i++) {
+        os << str.at(i);
+    }
+    return os;
+}
+
+};

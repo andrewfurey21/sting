@@ -6,5 +6,6 @@
 #include "scanner.hpp"
 #include "vmachine.hpp"
 #include "interpreter.hpp"
+#include "object.hpp"
 
 #endif
