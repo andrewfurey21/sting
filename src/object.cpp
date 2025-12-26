@@ -4,9 +4,7 @@ namespace sting {
 
 void string::allocate_size() {
     free(_data);
-    // std::cerr << "deleted data\n" << std::flush;
     _data = reinterpret_cast<u8*>(malloc(_size * sizeof(u8)));
-    std::cerr << "allocated data\n" << std::flush;
 }
 
 void string::copy(u8* dest, const u8* src, const u64 size) {
@@ -29,7 +27,6 @@ string::string(const u8* other) : string() {
 
 string::~string() {
     free(_data);
-    std::cerr << "deleted data\n" << std::flush;
 }
 
 string::string(const string& other) : _size(other._size), _data(nullptr) {
