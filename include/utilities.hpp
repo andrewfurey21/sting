@@ -29,6 +29,7 @@ inline void panic_if(bool expr, const std::string& msg, const i32 code) {
     std::cerr << "---------------- ERROR ----------------\n" << "Code: "
         << code << "\n" << msg << "\n"
         << "---------------------------------------\n";
+    // TODO: use std::terminate
     exit(code);
 }
 

@@ -5,6 +5,7 @@
 #include "dynarray.hpp"
 #include "scanner.hpp"
 #include "vmachine.hpp"
+#include "object.hpp"
 
 namespace sting {
 
@@ -37,6 +38,7 @@ public:
     void expression();
     void number();
     void literal();
+    void str();
     void grouping();
     void unary();
     void binary();

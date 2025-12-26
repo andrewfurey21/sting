@@ -145,8 +145,9 @@ token scanner::string_token() {
         if (at_end(current)) return error_token(const_cast<u8*>("unterminated string."));
         current++;
     }
+    current++;
     token t = build_token(token_type::STRING, start);
-    current += 2;
+    current++;
     return t;
 }
 

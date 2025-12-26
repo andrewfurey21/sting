@@ -25,6 +25,11 @@ string::string(const u8* other) : string() {
     copy(_data, other, _size);
 }
 
+string::string(const u8* other, u64 size) : string(size) {
+    allocate_size();
+    copy(_data, other, size);
+}
+
 string::~string() {
     free(_data);
 }
@@ -59,7 +64,17 @@ string& string::operator=(string&& other) {
     return *this;
 }
 
-char string::at(u64 index) const {
+object* string::clone() const {
+    return new string(*this);
+}
+
+u8* string::cstr() {
+    u8* ret = reinterpret_cast<char*>(calloc(_size + 1, sizeof(u8)));
+    copy(ret, _data, _size);
+    return ret;
+}
+
+u8 string::at(u64 index) const {
     panic_if(index >= _size, "string::at(): index out of bounds", -1);
     return _data[index];
 }
@@ -78,6 +93,19 @@ void string::operator+=(const string& other) {
 
     _size = exchange(concat._size, _size);
     _data = exchange(concat._data, _data);
+}
+
+bool string::operator==(const string& other) {
+    return this->compare(other);
+}
+
+bool string::compare(const string& other) const {
+    assert(this->size() == other.size());
+    for (u64 i{}; i < this->size(); i++) {
+        if (this->at(i) != other.at(i))
+            return false;
+    }
+    return true;
 }
 
 std::ostream& operator<<(std::ostream& os, const string& str) {

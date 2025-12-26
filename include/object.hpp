@@ -1,26 +1,37 @@
+#ifndef OBJECT_HPP
+#define OBJECT_HPP
+
 #include "utilities.hpp"
 
 namespace sting {
 
 class object {
+public:
+    // we can copy derived from base pointer
+    virtual object* clone() const = 0;
+    virtual u8* cstr() = 0;
 };
 
-
-// immutable string
 class string : public object {
 public:
     string();
     string(u64 size);
     string(const u8* other);
+    string(const u8* other, const u64 size);
     string(const string& other);
     string(string&& other);
     string& operator=(const string& other);
     string& operator=(string&& other);
     ~string();
 
-    char at (u64 index) const;
+    object* clone() const override;
+    u8* cstr() override;
+
+    u8 at (u64 index) const;
+    bool compare(const string& other) const;
     string operator+(const string& other);
     void operator+=(const string& other);
+    bool operator==(const string& other);
     u64 size() const { return _size; }
     u8* data() const { return _data; }
 
@@ -33,6 +44,6 @@ private:
     u64 _size;
 };
 
-
-
 } // namespace sting
+
+#endif

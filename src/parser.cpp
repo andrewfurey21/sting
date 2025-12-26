@@ -2,8 +2,6 @@
 
 namespace sting {
 
-// TODO: should just be a function, pass prev+current explicitly.
-
 parser::parser() : parser("unknown_chunk") {}
 
 parser::parser(const std::string& name) :
@@ -109,6 +107,13 @@ void parser::literal() {
         default:
             return;
     }
+}
+
+void parser::str() {
+    object* str = new string(prev->start, prev->length);
+    value val = value(str, vtype::STRING);
+    u32 index = chk.load_constant(val);
+    chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
 }
 
 void parser::grouping() {
@@ -224,7 +229,7 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     &parser::binary,   precedence::COMPARISON},   // [LESS]
   {nullptr,     &parser::binary,   precedence::COMPARISON},   // [LESS_EQUAL]
   {nullptr,     nullptr,   precedence::NONE},   // [IDENTIFIER]
-  {nullptr,     nullptr,   precedence::NONE},   // [STRING]
+  {&parser::str,     nullptr,   precedence::NONE},   // [STRING]
   {&parser::number,   nullptr,   precedence::NONE},   // [NUMBER]
   {nullptr,     nullptr,   precedence::NONE},   // [AND]
   {nullptr,     nullptr,   precedence::NONE},   // [CLASS]
