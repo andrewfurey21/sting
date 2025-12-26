@@ -173,6 +173,20 @@ void parser::binary() {
             chk.write_instruction(opcode::GREATER, prev->line);
             break;
         }
+        case token_type::GREATER_EQUAL: {
+            chk.write_instruction(opcode::LESS, prev->line);
+            chk.write_instruction(opcode::NOT, prev->line);
+            break;
+        }
+        case token_type::LESS: {
+            chk.write_instruction(opcode::LESS, prev->line);
+            break;
+        }
+        case token_type::LESS_EQUAL: {
+            chk.write_instruction(opcode::GREATER, prev->line);
+            chk.write_instruction(opcode::NOT, prev->line);
+            break;
+        }
         default:
             panic_if(true, "Unknown binary operator", -1);
     }

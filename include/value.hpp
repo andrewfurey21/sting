@@ -16,6 +16,7 @@ public:
     value operator-() const;
     value operator==(const value& other) const;
     value operator>(const value& other) const;
+    value operator<(const value& other) const;
 
     f32 number() const { return f; }
     u8 byte() const { return b; }

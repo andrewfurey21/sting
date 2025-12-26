@@ -109,33 +109,33 @@ struct vmachine {
                 }
 
                 case opcode::ADD: {
-                    const value a = value_stack.pop_back();
                     const value b = value_stack.pop_back();
-                    const value c = a + b;
+                    const value a = value_stack.pop_back();
+                    const value c = b + a;
                     value_stack.push_back(c);
                     break;
                 }
 
                 case opcode::MULTIPLY: {
-                    const value a = value_stack.pop_back();
                     const value b = value_stack.pop_back();
+                    const value a = value_stack.pop_back();
                     const value c = a * b;
                     value_stack.push_back(c);
                     break;
                 }
 
                 case opcode::DIVIDE: {
-                    const value a = value_stack.pop_back();
                     const value b = value_stack.pop_back();
-                    const value c = b / a;
+                    const value a = value_stack.pop_back();
+                    const value c = a / b;
                     value_stack.push_back(c);
                     break;
                 }
 
                 case opcode::SUBTRACT: {
-                    const value a = value_stack.pop_back();
                     const value b = value_stack.pop_back();
-                    const value c = b - a;
+                    const value a = value_stack.pop_back();
+                    const value c = a - b;
                     value_stack.push_back(c);
                     break;
                 }
@@ -168,6 +168,13 @@ struct vmachine {
                     const value b = value_stack.pop_back();
                     const value a = value_stack.pop_back();
                     value_stack.push_back(a > b);
+                    break;
+                }
+
+                case opcode::LESS: {
+                    const value b = value_stack.pop_back();
+                    const value a = value_stack.pop_back();
+                    value_stack.push_back(a < b);
                     break;
                 }
 
