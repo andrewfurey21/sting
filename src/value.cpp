@@ -51,9 +51,16 @@ value value::operator/(const value& other) const {
 
 value value::operator!() const {
     if (this->type != BOOLEAN) {
-        panic("Type error: cannot logical not non-boolean type");
+        panic("Type error: cannot logical-not non-boolean type");
     }
     return value(static_cast<u8>(this->b ^ 0x1));
+}
+
+value value::operator-() const {
+    if (this->type != NUMBER) {
+        panic("Type error: cannot negate non-number type");
+    }
+    return value(static_cast<f32>(-this->f));
 }
 
 value value::operator==(const value& other) const {
@@ -63,7 +70,7 @@ value value::operator==(const value& other) const {
     } else if (this->type == BOOLEAN) {
         return value(static_cast<u8>(this->b == other.b));
     } else {
-        return value(static_cast<f32>(this->f == other.f));
+        return value(static_cast<u8>(this->f == other.f));
     }
 }
 

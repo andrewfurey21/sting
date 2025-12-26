@@ -13,6 +13,7 @@ public:
     value operator*(const value& other) const;
     value operator/(const value& other) const;
     value operator!() const;
+    value operator-() const;
     value operator==(const value& other) const;
     value operator>(const value& other) const;
 

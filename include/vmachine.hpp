@@ -98,8 +98,7 @@ struct vmachine {
 
                 case opcode::NEGATE: {
                     value a = value_stack.pop_back();
-                    value b = a * -1.0f;
-                    value_stack.push_back(b);
+                    value_stack.push_back(-a);
                     break;
                 }
 

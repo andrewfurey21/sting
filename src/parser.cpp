@@ -164,6 +164,11 @@ void parser::binary() {
             chk.write_instruction(opcode::EQUAL, prev->line);
             break;
         }
+        case token_type::BANG_EQUAL: {
+            chk.write_instruction(opcode::EQUAL, prev->line);
+            chk.write_instruction(opcode::NOT, prev->line);
+            break;
+        }
         case token_type::GREATER: {
             chk.write_instruction(opcode::GREATER, prev->line);
             break;
