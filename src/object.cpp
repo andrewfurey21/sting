@@ -65,7 +65,9 @@ string& string::operator=(string&& other) {
 }
 
 object* string::clone() const {
-    return new string(*this);
+    object* str = new string(*this);
+    object_list.push_back(str);
+    return str;
 }
 
 u8* string::cstr() {

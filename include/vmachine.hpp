@@ -1,6 +1,7 @@
 #ifndef VMACHINE_HPP
 #define VMACHINE_HPP
 
+#include "object.hpp"
 #include "utilities.hpp"
 #include "dynarray.hpp"
 #include "value.hpp"
@@ -29,7 +30,7 @@ std::string opcode_to_string(opcode op);
 struct instruction {
     opcode op;
     u32 a;
-    u32 b;
+    u32 b; // TODO: remove
     u32 c;
 
     friend std::ostream& operator<<(std::ostream& os, const instruction& instr);
@@ -62,6 +63,10 @@ struct chunk {
     }
 
     friend std::ostream& operator<<(std::ostream& os, const chunk& chk);
+
+    ~chunk() {
+
+    }
 };
 
 enum class vm_result { // just result?

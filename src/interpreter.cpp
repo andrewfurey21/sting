@@ -61,6 +61,12 @@ void manage_result(vm_result result) {
         default:
             std::cerr << "Unknown interpreter result.\n";
     }
+
+    // hack, when redoing need to think more carefully about gc
+    for (u64 i{}; i < object_list.size(); i++) {
+        delete object_list.at(i);
+        object_list.at(i) = nullptr;
+    }
     exit(code);
 }
 

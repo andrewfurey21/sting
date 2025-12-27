@@ -16,6 +16,7 @@ public:
     value(f32 f);
     value(u8 b);
     value(object* o, vtype t);
+    ~value();
 
     value operator+(const value& other) const;
     value operator-(const value& other) const;
@@ -34,10 +35,10 @@ public:
     vtype type;
 
 private:
-    union {
+    union { // should really just be one (shared) object pointer.
         f32 f;
         u8 b;
-        object* o;
+        object* o; // should probably be a shared pointer
     };
 
     friend void check_type(const value& a, const value& b);

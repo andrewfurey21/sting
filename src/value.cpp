@@ -22,6 +22,9 @@ value::value(object* o, vtype t) {
     this->o = o->clone();
 }
 
+value::~value() {
+}
+
 value value::operator+(const value& other) const {
     check_type(*this, other);
     if (this->type != vtype::NUMBER && this->type != vtype::STRING) {
@@ -31,12 +34,10 @@ value value::operator+(const value& other) const {
     if (this->type == vtype::NUMBER) {
         return value(static_cast<f32>(this->number() + other.number()));
     } else if (this->type == vtype::STRING) {
-        // TODO: remove copies
         string b = *static_cast<string*>(this->obj());
         string a = *static_cast<string*>(other.obj());
-        const string c = a + b;
+        const string c = a + b; // TODO: remove copy
         return value(c.clone(), vtype::STRING);
-
     } else {
         panic("Type error: unknown type.");
     }
@@ -141,7 +142,9 @@ std::ostream& operator<<(std::ostream& os, const value& v) {
             break;
         }
         case vtype::STRING: {
-            os << '\"' << v.o->cstr() << '\"';
+            u8* s = v.o->cstr();
+            os << '\"' << s << '\"';
+            free(s);
             break;
         }
 

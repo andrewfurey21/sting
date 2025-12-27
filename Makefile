@@ -11,7 +11,7 @@ all:
 	g++ -c -o ./build/object.o ./src/object.cpp -std=$(CXX) $(FLAGS)
 	g++ -c -o ./build/main.o ./src/main.cpp -std=$(CXX) $(FLAGS)
 
-	g++ -o sting ./build/*.o
+	g++ -o sting ./build/*.o # -fsanitize=address
 
 clean:
 	rm ./build/*.o

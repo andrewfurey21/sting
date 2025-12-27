@@ -111,6 +111,7 @@ void parser::literal() {
 
 void parser::str() {
     object* str = new string(prev->start, prev->length);
+    object_list.push_back(str);
     value val = value(str, vtype::STRING);
     u32 index = chk.load_constant(val);
     chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
