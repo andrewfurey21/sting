@@ -100,7 +100,8 @@ bool string::operator==(const string& other) {
 }
 
 bool string::compare(const string& other) const {
-    assert(this->size() == other.size());
+    if (this->size() != other.size())
+        return false;
     for (u64 i{}; i < this->size(); i++) {
         if (this->at(i) != other.at(i))
             return false;

@@ -31,8 +31,6 @@ value value::operator+(const value& other) const {
     if (this->type == vtype::NUMBER) {
         return value(static_cast<f32>(this->number() + other.number()));
     } else if (this->type == vtype::STRING) {
-        // return value(static_cast<f32>(this->number() + other.number()));
-
         // TODO: remove copies
         string b = *static_cast<string*>(this->obj());
         string a = *static_cast<string*>(other.obj());
@@ -104,6 +102,8 @@ value value::operator==(const value& other) const {
         default:
             panic("Type error: cannot compare this type");
     }
+
+    return value();
 }
 
 value value::operator>(const value& other) const {
