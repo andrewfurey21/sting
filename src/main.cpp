@@ -6,15 +6,15 @@ i32 main() {
     // sting::manage_result(result);
 
     sting::hashmap<int, int> a(5);
-    for (int i = 0; i < 100; i++) {
-        a.insert(i, i+1);
+    int num = 100;
+    for (int i = 0; i < num; i++) {
+        a.insert(i, i + 1);
     }
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < num; i++) {
         std::cerr << a.at(i) << ", ";
     }
     std::cerr << "\n";
-
     sting::hashmap<int, int> b = a;
     for (int i = 0; i < 100; i++) {
         if (a.contains(i))
@@ -29,9 +29,9 @@ i32 main() {
     }
 
     sting::hashmap<int, int> c = sting::steal(b);
-    // assert(b.size() == 0);
-    // std::cerr << c.size() << "\n";
-    // assert(c.size() == 50);
+    assert(b.size() == 0);
+    std::cerr << c.size() << "\n";
+    assert(c.size() == 50);
 
     for (int i = 0; i < 100; i+=2) {
         if (c.contains(i))

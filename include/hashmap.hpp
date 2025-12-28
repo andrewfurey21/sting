@@ -72,8 +72,7 @@ public:
     }
 
     bool contains(const Key& key) {
-        panic_if(_size == 0ul ,
-                 "sting::hashmap::contains(): contains on empty hashmap");
+        if (_size == 0) return false;
         u64 original = _hash_key(key, _capacity);
         u64 index = original;
         while (_data[index].k != key) {
@@ -93,22 +92,22 @@ public:
         panic_if(1.0 < _max_load || _max_load < 0.0,
                  "sting::hashmap::contains(): _max_load must be within 0 and 1");
 
+        if (this->contains(key)) {
+            this->at(key) = value;
+            return;
+        }
+
         _grow_capacity();
         u64 index = _hash_key(key, _capacity);
-        while (_data[index].state == _slot::OCCUPIED && _data[index].k != key) {
+        while (_data[index].state == _slot::OCCUPIED) {
             ++index;
             index = _cycle_index(index, _capacity);
             // there will always be empty space, given that _max_load < 1.0
             // no need to check for original index.
         }
 
-        if (_data[index].k == key) {
-            _data[index].k = key;
-            _data[index].v = value;
-        } else {
-            new (_data + index) _slot(key, value);
-            _size++;
-        }
+        new (_data + index) _slot(key, value);
+        _size++;
     }
 
     // panic if not contains
