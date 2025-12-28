@@ -7,5 +7,6 @@
 #include "vmachine.hpp"
 #include "interpreter.hpp"
 #include "object.hpp"
+#include "hashmap.hpp"
 
 #endif

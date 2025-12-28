@@ -20,11 +20,12 @@ using u32 = uint32_t;
 using u8 = char;
 using i64 = int64_t;
 using i32 = int32_t;
-using f32 = float_t;
+using f32 = float;
+using f64 = double;
 
 namespace sting {
 
-inline void panic_if(bool expr, const std::string& msg, const i32 code) {
+inline void panic_if(bool expr, const std::string& msg, const i32 code = -1) {
     if (!expr) return;
     std::cerr << "---------------- ERROR ----------------\n" << "Code: "
         << code << "\n" << msg << "\n"
@@ -79,6 +80,8 @@ template <typename T>
 decltype(auto) steal(T&& value) {
     return static_cast<typename remove_reference<T>::type&&>(value);
 }
+
+const u64 DEFAULT_SIZE = 1 << 8;
 
 } // namespace sting
 

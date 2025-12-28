@@ -5,7 +5,6 @@
 
 namespace sting {
 
-const u64 DEFAULT_SIZE = 1 << 8;
 // currently just a stack, can only push/pop.
 // look into semistable::vector
 template <typename T>

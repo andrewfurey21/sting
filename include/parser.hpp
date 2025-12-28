@@ -6,6 +6,7 @@
 #include "scanner.hpp"
 #include "vmachine.hpp"
 #include "object.hpp"
+#include "hashmap.hpp"
 
 namespace sting {
 
