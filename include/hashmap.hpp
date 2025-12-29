@@ -101,6 +101,10 @@ public:
             if (index == original)
                 return false;
         }
+
+        if (_data[index].state == _slot::DELETED)
+            return false;
+
         return true;
     }
 
@@ -137,6 +141,8 @@ public:
             ++index;
             index = _cycle_index(index, _capacity);
         }
+
+        panic_if(_data[index].state == _slot::DELETED, "sting::hashmap::at(): key-value pair was deleted\n");
         return _data[index].v;
     }
 
