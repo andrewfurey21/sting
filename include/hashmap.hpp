@@ -60,6 +60,7 @@ public:
 
     hashmap& operator=(hashmap&& other) {
         if (this != &other) {
+            _free_data();
             _data = exchange(other._data, static_cast<_slot*>(calloc(1, sizeof(_slot))));
             _capacity = exchange(other._capacity, 1);
             _size = exchange(other._size, 0);
