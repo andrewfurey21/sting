@@ -10,19 +10,26 @@ namespace sting {
  *
  *  TODO: work needs to be done to remove all the copies.
  */
+
+const u64 DEFAULT_CAPACITY = 256;
+const u64 DEFAULT_FNV_PRIME = 0x00000100000001B3;
+const u64 DEFAULT_FNV_OFFSET = 0xCBF29CE484222325;
+const f64 DEFAULT_GROWTH_FACTOR = 2.0;
+const f64 DEFAULT_MAX_LOAD = 0.4;
+
 template <typename Key, typename Value>
 class hashmap {
 public:
-    hashmap() : hashmap(DEFAULT_SIZE) {};
+    hashmap() : hashmap(DEFAULT_CAPACITY) {};
 
     hashmap(u64 capacity) :
         _data(nullptr),
         _capacity(capacity),
         _size(0),
-        _fnv_prime(0x00000100000001B3),
-        _fnv_offset(0xCBF29CE484222325),
-        _growth_factor(2.0),
-        _max_load(0.4)
+        _fnv_prime(DEFAULT_FNV_PRIME),
+        _fnv_offset(DEFAULT_FNV_OFFSET),
+        _growth_factor(DEFAULT_GROWTH_FACTOR),
+        _max_load(DEFAULT_MAX_LOAD)
     {
         _data = _allocate(_capacity);
     }
@@ -38,9 +45,14 @@ public:
     }
 
     hashmap(hashmap&& other) {
-         _data = exchange(other._data, static_cast<_slot*>(calloc(1, sizeof(_slot))));
+        std::cerr << "steal!\n";
+         _data = exchange(other._data, _allocate(1));
         _capacity = exchange(other._capacity, 1);
         _size = exchange(other._size, 0);
+        _fnv_prime = other._fnv_prime;
+        _fnv_offset = other._fnv_offset;
+        _growth_factor = other._growth_factor;
+        _max_load = other._max_load;
     }
 
     hashmap& operator=(const hashmap& other) {
@@ -61,9 +73,13 @@ public:
     hashmap& operator=(hashmap&& other) {
         if (this != &other) {
             _free_data();
-            _data = exchange(other._data, static_cast<_slot*>(calloc(1, sizeof(_slot))));
+            _data = exchange(other._data, _allocate(1));
             _capacity = exchange(other._capacity, 1);
             _size = exchange(other._size, 0);
+            _fnv_prime = other._fnv_prime;
+            _fnv_offset = other._fnv_offset;
+            _growth_factor = other._growth_factor;
+            _max_load = other._max_load;
         }
         return *this;
     }

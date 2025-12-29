@@ -10,36 +10,43 @@ i32 main() {
     for (int i = 0; i < num; i++) {
         a.insert(i, i + 1);
     }
+    assert(a.size() == 100);
 
+    std::cerr << "Should say 1 -> 100\n";
     for (int i = 0; i < num; i++) {
         std::cerr << a.at(i) << ", ";
     }
     std::cerr << "\n";
+
+
     sting::hashmap<int, int> b = a;
-    for (int i = 0; i < 100; i++) {
-        if (a.contains(i))
-            std::cerr << b.at(i) << ", ";
-    }
-
-    std::cerr << "\n" << std::flush;
-
     for (int i = 0; i < 50; i++) {
         if (b.contains(i))
             b.remove(i);
     }
 
+    std::cerr << "Should say 50 -> 100\n";
+    for (int i = 0; i < 100; i++) {
+        if (b.contains(i))
+            std::cerr << b.at(i) << ", ";
+    }
+
+    std::cerr << "\n" << std::flush;
+
+    std::cerr << "Should be a steal: ";
     sting::hashmap<int, int> c = sting::steal(b);
     assert(b.size() == 0);
-    std::cerr << c.size() << "\n";
     assert(c.size() == 50);
 
-    for (int i = 0; i < 100; i+=2) {
+    std::cerr << "Should say even 50 -> 100\n";
+    std::cerr << "Size: " << c.size() << "\t Capacity: " << c.capacity() << "\n";
+    for (int i = 0; i < 100; i++) {
         if (c.contains(i))
             std::cerr << c.at(i) << ", ";
     }
     std::cerr << "\n";
 
-
+    std::cerr << "Should say 0-256, i: i/3\n";
     for (int i = 0; i < 256; i += 3) {
         b.insert(i, i / 3);
         std::cerr << i << ": " << b.at(i) << ", ";
