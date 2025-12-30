@@ -102,7 +102,7 @@ public:
                 return false;
         }
 
-        if (_data[index].state == _slot::DELETED)
+        if (_data[index].state != _slot::OCCUPIED)
             return false;
 
         return true;
@@ -114,7 +114,9 @@ public:
                  "sting::hashmap::contains(): _max_load must be within 0 and 1");
 
         if (this->contains(key)) {
-            this->at(key) = value;
+            // this->at(key) = value;
+            Value& v = this->at(key);
+            v = value;
             return;
         }
 
@@ -142,7 +144,8 @@ public:
             index = _cycle_index(index, _capacity);
         }
 
-        panic_if(_data[index].state == _slot::DELETED, "sting::hashmap::at(): key-value pair was deleted\n");
+        panic_if(_data[index].state != _slot::OCCUPIED,
+                 "sting::hashmap::at(): key-value pair was deleted\n");
         return _data[index].v;
     }
 

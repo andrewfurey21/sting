@@ -36,6 +36,7 @@ public:
     string operator+(const string& other);
     void operator+=(const string& other);
     bool operator==(const string& other);
+    bool operator!=(const string& other);
     u64 size() const { return _size; }
     u8* data() const { return _data; }
 

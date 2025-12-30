@@ -35,7 +35,6 @@ string::~string() {
 }
 
 string::string(const string& other) : _size(other._size), _data(nullptr) {
-    free(_data);
     allocate_size();
     copy(_data, other.data(), other.size());
 }
@@ -47,7 +46,6 @@ string::string(string&& other) {
 
 string& string::operator=(const string& other) {
     if (this != &other) {
-        free(_data);
         _size = other._size;
         allocate_size();
         copy(_data, other.data(), other.size());
@@ -99,6 +97,10 @@ void string::operator+=(const string& other) {
 
 bool string::operator==(const string& other) {
     return this->compare(other);
+}
+
+bool string::operator!=(const string& other) {
+    return !this->compare(other);
 }
 
 bool string::compare(const string& other) const {
