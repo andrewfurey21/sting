@@ -3,7 +3,7 @@
 /*
 
 Scanner as a class is probably no good. Should just be one function call,
-that returns dynamic_array<token>.
+that returns dynarray<token>.
 
 Don't like my use of lambdas.
 

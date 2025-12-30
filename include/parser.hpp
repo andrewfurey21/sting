@@ -36,6 +36,8 @@ public:
     void get_next_token();
     void consume(token_type type, const char* msg);
     void parse_precedence(precedence p);
+    void declaration();
+    void statement();
     void expression();
     void number();
     void literal();
@@ -43,6 +45,9 @@ public:
     void grouping();
     void unary();
     void binary();
+    void print();
+
+    bool match(token_type type);
 
     token* prev;
     token* current;

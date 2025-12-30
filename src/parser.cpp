@@ -13,9 +13,20 @@ parser::parser(const std::string& name) :
     current = 0;
 }
 
+bool parser::match(token_type type) {
+    if (prev->type != type) return false;
+    // get_next_token();
+    return true;
+}
+
 bool parser::parse() {
     current = &tokens.at(0);
-    expression();
+
+    // expression();
+    while (current->type != token_type::END_OF_FILE) {
+        get_next_token();
+        declaration();
+    }
 
     consume(token_type::END_OF_FILE, "Expected end of file");
     if (panic) return !parse_error;
@@ -76,6 +87,18 @@ void parser::parse_precedence(precedence p) {
         parse_fn infix_rule = get_rule(prev->type)->infix;
         (this->*infix_rule)();
         ci = static_cast<int>(get_rule(current->type)->prec);
+    }
+}
+
+void parser::declaration() {
+    statement();
+}
+
+void parser::statement() {
+    if (match(token_type::PRINT)) {
+        print();
+    } else {
+        sting::panic("Unknown statement type.");
     }
 }
 
@@ -197,6 +220,13 @@ void parser::binary() {
             panic_if(true, "Unknown binary operator", -1);
     }
 }
+
+void parser::print() {
+    expression();
+    consume(token_type::SEMICOLON, "Expected ;");
+    chk.write_instruction(opcode::PRINT, prev->line);
+}
+
     // NONE       0
     // ASSIGNMENT 1 =
     // OR         2 or
@@ -241,7 +271,7 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     nullptr,   precedence::NONE},   // [IF]
   {&parser::literal,     nullptr,   precedence::NONE},   // [NIL]
   {nullptr,     nullptr,   precedence::NONE},   // [OR]
-  {nullptr,     nullptr,   precedence::NONE},   // [PRINT]
+  {&parser::print,     nullptr,   precedence::NONE},   // [PRINT]
   {nullptr,     nullptr,   precedence::NONE},   // [RETURN]
   {nullptr,     nullptr,   precedence::NONE},   // [SUPER]
   {nullptr,     nullptr,   precedence::NONE},   // [THIS]

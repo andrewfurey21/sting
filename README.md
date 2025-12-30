@@ -5,3 +5,4 @@ Bytecode VM based on clox from [Crafting Interpreters](https://craftinginterpret
 ## notes / todos
 
 - [ ] register vs stack instructions (lua5 vs python)
+- [ ] string interning

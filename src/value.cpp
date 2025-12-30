@@ -143,7 +143,7 @@ std::ostream& operator<<(std::ostream& os, const value& v) {
         }
         case vtype::STRING: {
             u8* s = v.o->cstr();
-            os << '\"' << s << '\"';
+            os << s;
             free(s);
             break;
         }

@@ -23,6 +23,7 @@ enum class opcode {
     GREATER,
     LESS,
     EQUAL,
+    PRINT,
 };
 
 std::string opcode_to_string(opcode op);
@@ -87,10 +88,10 @@ struct vmachine {
 
             switch(current.op) {
                 case opcode::RETURN: {
-                    if (value_stack.size() > 0) {
-                        const value& val = value_stack.at(value_stack.size() - 1);
-                        std::cerr << val << "\n";
-                    }
+                    // if (value_stack.size() > 0) {
+                    //     const value& val = value_stack.at(value_stack.size() - 1);
+                    //     std::cerr << val << "\n";
+                    // }
                     return vm_result::OK;
                 }
 
@@ -180,6 +181,11 @@ struct vmachine {
                     const value b = value_stack.pop_back();
                     const value a = value_stack.pop_back();
                     value_stack.push_back(a < b);
+                    break;
+                }
+
+                case opcode::PRINT: {
+                    std::cout << value_stack.pop_back();
                     break;
                 }
 
