@@ -14,8 +14,8 @@ namespace sting {
 const u64 DEFAULT_CAPACITY = 256;
 const u64 DEFAULT_FNV_PRIME = 0x00000100000001B3;
 const u64 DEFAULT_FNV_OFFSET = 0xCBF29CE484222325;
-const f64 DEFAULT_GROWTH_FACTOR = 2.0;
-const f64 DEFAULT_MAX_LOAD = 0.4;
+const f64 DEFAULT_GROWTH_FACTOR = 2.0; // hashmap assumes > 1
+const f64 DEFAULT_MAX_LOAD = 0.75; // hashmap assumes between 0 and 1
 
 template <typename Key, typename Value>
 class hashmap {
@@ -110,13 +110,8 @@ public:
 
     // would be nice to have a move version
     void insert(const Key& key, const Value& value) {
-        panic_if(1.0 < _max_load || _max_load < 0.0,
-                 "sting::hashmap::contains(): _max_load must be within 0 and 1");
-
         if (this->contains(key)) {
-            // this->at(key) = value;
-            Value& v = this->at(key);
-            v = value;
+            this->at(key) = value;
             return;
         }
 
@@ -136,28 +131,35 @@ public:
     // panic if not contains
     Value& at(const Key& key) {
         panic_if(_size == 0ul, "sting::hashmap::at(): at on empty hashmap");
-        u64 index = _hash_key(key, _capacity);
+        u64 original = _hash_key(key, _capacity);
+        u64 index = original;
         while (_data[index].k != key) {
             panic_if(_data[index].state == _slot::EMPTY,
                      "sting::hashmap::at(): non existent key-value pair");
             ++index;
             index = _cycle_index(index, _capacity);
+            panic_if(index == original, // if they're all deleted. not great way to handle this.
+                     "sting::hashmap::at(): non existent key-value pair");
         }
 
         panic_if(_data[index].state != _slot::OCCUPIED,
-                 "sting::hashmap::at(): key-value pair was deleted\n");
+                 "sting::hashmap::at(): non existent key-value pair\n");
         return _data[index].v;
     }
 
+    // panic if not contains
     void remove(const Key& key) {
         panic_if(_size == 0ul, "sting::hashmap::remove(): remove on empty hashmap");
 
-        u64 index = _hash_key(key, _capacity);
+        u64 original = _hash_key(key, _capacity);
+        u64 index = original;
         while (_data[index].k != key) {
             panic_if(_data[index].state == _slot::EMPTY,
                      "sting::hashmap::remove(): non existent key-value pair");
             ++index;
             index = _cycle_index(index, _capacity);
+            panic_if(index == original,
+                     "sting::hashmap::remove(): non existent key-value pair");
         }
         _data[index].k.~Key();
         _data[index].v.~Value();
