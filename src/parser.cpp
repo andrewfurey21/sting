@@ -22,9 +22,7 @@ bool parser::match(token_type type) {
 bool parser::parse() {
     current = &tokens.at(0);
 
-    // expression();
     while (current->type != token_type::END_OF_FILE) {
-        get_next_token();
         declaration();
     }
 
@@ -95,11 +93,19 @@ void parser::declaration() {
 }
 
 void parser::statement() {
-    if (match(token_type::PRINT)) {
+    if (current->type == token_type::PRINT) {
+        get_next_token();
         print();
     } else {
-        sting::panic("Unknown statement type.");
+        // sting::panic("Unknown statement type.");
+        expression_statement();
     }
+}
+
+void parser::expression_statement() {
+    expression();
+    consume(token_type::SEMICOLON, "Expected ;");
+    chk.write_instruction(opcode::POP, prev->line);
 }
 
 void parser::expression() {

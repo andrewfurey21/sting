@@ -32,6 +32,10 @@ std::string opcode_to_string(opcode op) {
             return "LESS";
         case opcode::EQUAL:
             return "EQUAL";
+        case opcode::PRINT:
+            return "PRINT";
+        case opcode::POP:
+            return "POP";
         default:
             return "UNKNOWN";
     }

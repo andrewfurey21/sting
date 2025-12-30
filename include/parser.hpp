@@ -38,6 +38,7 @@ public:
     void parse_precedence(precedence p);
     void declaration();
     void statement();
+    void expression_statement();
     void expression();
     void number();
     void literal();

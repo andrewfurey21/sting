@@ -24,6 +24,7 @@ enum class opcode {
     LESS,
     EQUAL,
     PRINT,
+    POP,
 };
 
 std::string opcode_to_string(opcode op);
@@ -185,7 +186,12 @@ struct vmachine {
                 }
 
                 case opcode::PRINT: {
-                    std::cout << value_stack.pop_back();
+                    std::cout << value_stack.pop_back() << "\n";
+                    break;
+                }
+
+                case opcode::POP: {
+                    value_stack.pop_back();
                     break;
                 }
 
