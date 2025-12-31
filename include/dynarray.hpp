@@ -81,6 +81,10 @@ public:
         return ret;
     }
 
+    T& back() {
+        return _data[_size - 1];
+    }
+
     template<typename U>
     friend std::ostream& operator<<(std::ostream& os, const dynarray<U>& other);
 
