@@ -5,6 +5,7 @@
 #include "utilities.hpp"
 #include "dynarray.hpp"
 #include "value.hpp"
+#include "hashmap.hpp"
 
 namespace sting {
 
@@ -25,6 +26,8 @@ enum class opcode {
     EQUAL,
     PRINT,
     POP,
+    DEFINE_GLOBAL,
+    GET_GLOBAL,
 };
 
 std::string opcode_to_string(opcode op);
@@ -89,10 +92,6 @@ struct vmachine {
 
             switch(current.op) {
                 case opcode::RETURN: {
-                    // if (value_stack.size() > 0) {
-                    //     const value& val = value_stack.at(value_stack.size() - 1);
-                    //     std::cerr << val << "\n";
-                    // }
                     return vm_result::OK;
                 }
 
@@ -186,7 +185,7 @@ struct vmachine {
                 }
 
                 case opcode::PRINT: {
-                    std::cout << value_stack.pop_back() << "\n";
+                    std::cout << value_stack.pop_back() << "\n" << std::flush;
                     break;
                 }
 
@@ -195,10 +194,33 @@ struct vmachine {
                     break;
                 }
 
+                case opcode::DEFINE_GLOBAL: {
+                    u32 index = current.a;
+                    const value& v = chk.constant_pool.at(index);
+                    const string* name = static_cast<string*>(v.obj());
+                    // this looks really bad but guaranteed to be a string.
+                    globals.insert(*name, value_stack.back());
+                    value_stack.pop_back();
+
+                    break;
+                }
+
+                case opcode::GET_GLOBAL: {
+                    u32 index = current.a;
+
+                    const value& v = chk.constant_pool.at(index);
+                    const string* name = static_cast<string*>(v.obj());
+
+                    panic_if(!globals.contains(*name), "Undefined variable");
+
+                    value_stack.push_back(globals.at(*name));
+                    break;
+                }
+
                 default: {
                     std::stringstream errMessage;
                     errMessage << "Unknown opcode: " << static_cast<i32>(current.op);
-                    panic_if(true, errMessage.str(), -1);
+                    panic(errMessage.str());
                 }
             }
         }
@@ -207,6 +229,7 @@ struct vmachine {
     chunk chk;
     instruction* pc;
     dynarray<value> value_stack;
+    hashmap<string, value> globals;
 };
 
 } // namespace sting

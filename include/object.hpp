@@ -14,7 +14,7 @@ public:
     virtual ~object() = default;
 };
 
-inline dynarray<object*> object_list;
+static inline dynarray<object*> object_list;
 
 class string : public object {
 public:

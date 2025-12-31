@@ -14,6 +14,7 @@
 #include <ostream>
 #include <filesystem>
 #include <string>
+#include <type_traits>
 
 using u64 = uint64_t;
 using u32 = uint32_t;

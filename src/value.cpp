@@ -23,6 +23,7 @@ value::value(object* o, vtype t) {
 }
 
 value::~value() {
+    // shouldn't we free this->o
 }
 
 value value::operator+(const value& other) const {

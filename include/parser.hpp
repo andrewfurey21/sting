@@ -37,6 +37,9 @@ public:
     void consume(token_type type, const char* msg);
     void parse_precedence(precedence p);
     void declaration();
+    void var_declaration();
+    void variable();
+    void named_variable(const token& name);
     void statement();
     void expression_statement();
     void expression();

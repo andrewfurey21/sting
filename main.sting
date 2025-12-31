@@ -1,9 +1,3 @@
-// test comment
-
-// print("hello" + ", world!");
-// print(5 * 4 + 3 == 23);
-
-5 + 5;
-10 + 7;
-5 + 5 == 25 - 15;
-print("hello, world!");
+var square = 5 * 5;
+var result = 25;
+print square == result;

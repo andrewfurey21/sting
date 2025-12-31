@@ -15,7 +15,6 @@ parser::parser(const std::string& name) :
 
 bool parser::match(token_type type) {
     if (prev->type != type) return false;
-    // get_next_token();
     return true;
 }
 
@@ -89,7 +88,42 @@ void parser::parse_precedence(precedence p) {
 }
 
 void parser::declaration() {
-    statement();
+    if (current->type == token_type::VAR) {
+        get_next_token();
+        var_declaration();
+    } else {
+        statement();
+    }
+}
+
+void parser::var_declaration() {
+    consume(token_type::IDENTIFIER, "Expected variable name");
+
+    // identifier constant
+    string name(prev->start, prev->length);
+    value v(&name, vtype::STRING);
+    u64 index = chk.load_constant(v);
+
+    if (current->type == token_type::EQUAL) {
+        get_next_token();
+        expression();
+    } else {
+        chk.write_instruction(opcode::NIL, current->line);
+    }
+
+    consume(token_type::SEMICOLON, "Expected ';' after variable declaration");
+    chk.write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
+}
+
+void parser::variable() {
+    named_variable(*prev);
+}
+
+void parser::named_variable(const token& tok_name) {
+    string name(tok_name.start, tok_name.length);
+    value v(&name, vtype::STRING);
+    u64 index = chk.load_constant(v);
+    chk.write_instruction(opcode::GET_GLOBAL, prev->line, index);
 }
 
 void parser::statement() {
@@ -97,7 +131,6 @@ void parser::statement() {
         get_next_token();
         print();
     } else {
-        // sting::panic("Unknown statement type.");
         expression_statement();
     }
 }
@@ -265,7 +298,7 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     &parser::binary,   precedence::COMPARISON},   // [GREATER_EQUAL]
   {nullptr,     &parser::binary,   precedence::COMPARISON},   // [LESS]
   {nullptr,     &parser::binary,   precedence::COMPARISON},   // [LESS_EQUAL]
-  {nullptr,     nullptr,   precedence::NONE},   // [IDENTIFIER]
+  {&parser::variable,     nullptr,   precedence::NONE},   // [IDENTIFIER]
   {&parser::str,     nullptr,   precedence::NONE},   // [STRING]
   {&parser::number,   nullptr,   precedence::NONE},   // [NUMBER]
   {nullptr,     nullptr,   precedence::NONE},   // [AND]

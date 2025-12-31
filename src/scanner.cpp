@@ -37,6 +37,12 @@ token scanner::next_token() {
     if (is_digit(c)) return number_token();
     if (is_alpha(c)) return identifier_token();
 
+    // TODO: fix " " bug
+    // if (c == '\"') {
+    //     current++;
+    //     return string_token();
+    // }
+
     current++;
     switch (c) {
         case '(': return build_token_start(token_type::LEFT_PAREN);
