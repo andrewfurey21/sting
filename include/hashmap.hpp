@@ -2,6 +2,7 @@
 #define HASHMAP_HPP
 
 #include "utilities.hpp"
+#include "object.hpp"
 
 namespace sting {
 
@@ -193,8 +194,18 @@ private:
     // produces some offset into _data, using FNV-1a
     u64 _hash_key(const Key& key, const u64 capacity) const {
         u64 hash = _fnv_offset;
-        const u8* key_addr = reinterpret_cast<const u8*>(&key);
-        for (u64 i{}; i < sizeof(Key); ++i) {
+        u8* key_addr;
+        u64 key_size;
+
+        if constexpr (std::is_same_v<Key, string>) {
+            key_addr = key.data();
+            key_size = key.size();
+        } else {
+            key_addr = reinterpret_cast<u8*>(&key);
+            key_size = sizeof(Key);
+        }
+
+        for (u64 i{}; i < key_size; ++i) {
             hash ^= key_addr[i];
             hash *= _fnv_prime;
         }
