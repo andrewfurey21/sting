@@ -46,8 +46,7 @@ public:
     }
 
     hashmap(hashmap&& other) {
-        std::cerr << "steal!\n";
-         _data = exchange(other._data, _allocate(1));
+        _data = exchange(other._data, _allocate(1));
         _capacity = exchange(other._capacity, 1);
         _size = exchange(other._size, 0);
         _fnv_prime = other._fnv_prime;

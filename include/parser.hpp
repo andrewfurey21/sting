@@ -36,22 +36,23 @@ public:
     void get_next_token();
     void consume(token_type type, const char* msg);
     void parse_precedence(precedence p);
+    bool match(token_type type);
+
+    // parse functions that generate code
     void declaration();
     void var_declaration();
-    void variable();
-    void named_variable(const token& name);
+    void variable(bool assignable);
+    void named_variable(const token& name, bool assignable);
     void statement();
     void expression_statement();
     void expression();
-    void number();
-    void literal();
-    void str();
-    void grouping();
-    void unary();
-    void binary();
-    void print();
-
-    bool match(token_type type);
+    void number(bool assignable);
+    void literal(bool assignable);
+    void str(bool assignable);
+    void grouping(bool assignable);
+    void unary(bool assignable);
+    void binary(bool assignable);
+    void print(bool assignable);
 
     token* prev;
     token* current;
@@ -62,7 +63,7 @@ public:
     bool panic;
 };
 
-using parse_fn = void (parser::*)();
+using parse_fn = void (parser::*)(bool assignable);
 
 struct parse_rule {
     parse_fn prefix;

@@ -75,16 +75,20 @@ void parser::parse_precedence(precedence p) {
         return;
     }
 
-    (this->*prefix_rule)();
+    bool assignable = p <= precedence::ASSIGNMENT;
+    (this->*prefix_rule)(assignable);
 
     int pi = static_cast<int>(p);
     int ci = static_cast<int>(get_rule(current->type)->prec);
     while (pi <= ci) {
         get_next_token();
         parse_fn infix_rule = get_rule(prev->type)->infix;
-        (this->*infix_rule)();
+        (this->*infix_rule)(assignable);
         ci = static_cast<int>(get_rule(current->type)->prec);
     }
+
+    // panic_if(assignable && current->type == token_type::EQUAL,
+    //          "Cannot assign to this expression.");
 }
 
 void parser::declaration() {
@@ -115,16 +119,17 @@ void parser::var_declaration() {
     chk.write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
 }
 
-void parser::variable() {
-    named_variable(*prev);
+void parser::variable(bool assignable) {
+    named_variable(*prev, assignable);
 }
 
-void parser::named_variable(const token& tok_name) {
+void parser::named_variable(const token& tok_name, bool assignable) {
     string name(tok_name.start, tok_name.length);
     value v(&name, vtype::STRING);
     u64 index = chk.load_constant(v);
 
     if (current->type == token_type::EQUAL) {
+        panic_if(!assignable, "Cannot assign to this expression");
         get_next_token();
         expression();
         chk.write_instruction(opcode::SET_GLOBAL, prev->line, index);
@@ -136,7 +141,7 @@ void parser::named_variable(const token& tok_name) {
 void parser::statement() {
     if (current->type == token_type::PRINT) {
         get_next_token();
-        print();
+        print(false);
     } else {
         expression_statement();
     }
@@ -153,13 +158,13 @@ void parser::expression() {
 }
 
 // gets the number, emits LOAD_CONST and pushes number onto value stack
-void parser::number() {
+void parser::number(bool assignable) {
     const value val = std::stof(std::string(prev->start, prev->length));
     u32 index = chk.load_constant(val);
     chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
 }
 
-void parser::literal() {
+void parser::literal(bool assignable) {
     switch(prev->type) {
         case token_type::TRUE: {
             chk.write_instruction(opcode::TRUE, 0);
@@ -178,7 +183,7 @@ void parser::literal() {
     }
 }
 
-void parser::str() {
+void parser::str(bool assignable) {
     object* str = new string(prev->start, prev->length);
     object_list.push_back(str);
     value val = value(str, vtype::STRING);
@@ -186,13 +191,13 @@ void parser::str() {
     chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
 }
 
-void parser::grouping() {
+void parser::grouping(bool assignable) {
     // assume ( is in previous.
     expression();
     consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
 }
 
-void parser::unary() {
+void parser::unary(bool assignable) {
     token_type op_type = prev->type;
     parse_precedence(precedence::UNARY);
 
@@ -211,7 +216,7 @@ void parser::unary() {
     }
 }
 
-void parser::binary() {
+void parser::binary(bool assignable) {
     token_type type = prev->type;
     parse_rule* rule = get_rule(type);
 
@@ -263,11 +268,11 @@ void parser::binary() {
             break;
         }
         default:
-            panic_if(true, "Unknown binary operator", -1);
+            sting::panic("Unknown binary operator");
     }
 }
 
-void parser::print() {
+void parser::print(bool assignable) {
     expression();
     consume(token_type::SEMICOLON, "Expected ;");
     chk.write_instruction(opcode::PRINT, prev->line);
