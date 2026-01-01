@@ -1,3 +1,6 @@
 var square = 5 * 5;
-var result = 25;
-print square == result;
+square = 10;
+print(square);
+// var result = 25;
+// result = 26 - 1;
+// print square == result;

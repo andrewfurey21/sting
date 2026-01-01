@@ -28,6 +28,7 @@ enum class opcode {
     POP,
     DEFINE_GLOBAL,
     GET_GLOBAL,
+    SET_GLOBAL,
 };
 
 std::string opcode_to_string(opcode op);
@@ -211,9 +212,20 @@ struct vmachine {
                     const value& v = chk.constant_pool.at(index);
                     const string* name = static_cast<string*>(v.obj());
 
-                    panic_if(!globals.contains(*name), "Undefined variable");
+                    panic_if(!globals.contains(*name), "Cannot get undefined variable");
 
                     value_stack.push_back(globals.at(*name));
+                    break;
+                }
+
+                case opcode::SET_GLOBAL: {
+                    u32 index = current.a;
+                    const value& v = chk.constant_pool.at(index);
+                    const string* name = static_cast<string*>(v.obj());
+                    panic_if(!globals.contains(*name), "Cannot set undefined variable");
+
+                    globals.at(*name) = value_stack.back();
+
                     break;
                 }
 

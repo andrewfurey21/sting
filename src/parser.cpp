@@ -123,7 +123,14 @@ void parser::named_variable(const token& tok_name) {
     string name(tok_name.start, tok_name.length);
     value v(&name, vtype::STRING);
     u64 index = chk.load_constant(v);
-    chk.write_instruction(opcode::GET_GLOBAL, prev->line, index);
+
+    if (current->type == token_type::EQUAL) {
+        get_next_token();
+        expression();
+        chk.write_instruction(opcode::SET_GLOBAL, prev->line, index);
+    } else {
+        chk.write_instruction(opcode::GET_GLOBAL, prev->line, index);
+    }
 }
 
 void parser::statement() {

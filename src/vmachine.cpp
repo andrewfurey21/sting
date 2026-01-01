@@ -40,8 +40,10 @@ std::string opcode_to_string(opcode op) {
             return "DEFINE GLOBAL";
         case opcode::GET_GLOBAL:
             return "GET GLOBAL";
+        case opcode::SET_GLOBAL:
+            return "SET GLOBAL";
         default:
-            return "UNKNOWN";
+            return "WARNING: UNKNOWN OPCODE";
     }
 }
 
