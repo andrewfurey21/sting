@@ -1,11 +1,15 @@
-var a = 5;
-var b = 6;
-var c = 10;
-var d = 12;
 
-b = c + d; // should be a compiler error!
+var a = 10;
+var b = 5;
+var c = 9;
 
-print a;
+var mean = (a + b + c) / 9;
+
+{
+
+}
+
+var b = 10;
 print b;
-print c;
-print d;
+
+

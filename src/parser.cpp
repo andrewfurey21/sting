@@ -100,13 +100,42 @@ void parser::declaration() {
     }
 }
 
+// add local variable to list of variables in given scope.
+void parser::declare_variable() {
+    if (c.scope_depth == 0) return;
+
+    local l = {
+        .name = *prev,
+        .depth = c.scope_depth,
+    };
+
+    for (u64 i{}; i < c.locals.size(); i++) {
+        const local& current_local = c.locals.at(i);
+        if (current_local.depth != -1 && current_local.depth < c.scope_depth)
+            break;
+
+        panic_if(l == current_local, "Error: redeclaration of variable");
+    }
+
+    c.locals.push_back(l);
+}
+
+u64 parser::parse_variable_name() {
+    string name(prev->start, prev->length);
+    value v(&name, vtype::STRING);
+    return chk.load_constant(v);
+}
+
 void parser::var_declaration() {
     consume(token_type::IDENTIFIER, "Expected variable name");
 
-    // identifier constant
-    string name(prev->start, prev->length);
-    value v(&name, vtype::STRING);
-    u64 index = chk.load_constant(v);
+    u64 index;
+    declare_variable();
+    if (c.scope_depth > 0)
+        index = 0;
+    else {
+        index = parse_variable_name();
+    }
 
     if (current->type == token_type::EQUAL) {
         get_next_token();
@@ -116,7 +145,9 @@ void parser::var_declaration() {
     }
 
     consume(token_type::SEMICOLON, "Expected ';' after variable declaration");
-    chk.write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
+
+    if (c.scope_depth == 0)
+        chk.write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
 }
 
 void parser::variable(bool assignable) {
@@ -124,9 +155,7 @@ void parser::variable(bool assignable) {
 }
 
 void parser::named_variable(const token& tok_name, bool assignable) {
-    string name(tok_name.start, tok_name.length);
-    value v(&name, vtype::STRING);
-    u64 index = chk.load_constant(v);
+    u64 index = parse_variable_name();
 
     if (current->type == token_type::EQUAL) {
         panic_if(!assignable, "Cannot assign to this expression");
@@ -142,9 +171,23 @@ void parser::statement() {
     if (current->type == token_type::PRINT) {
         get_next_token();
         print(false);
+    } else if (current->type == token_type::LEFT_BRACE) {
+        c.scope_depth++;
+        block();
+        c.scope_depth--;
     } else {
         expression_statement();
     }
+}
+
+void parser::block() {
+    get_next_token();
+    while (current->type != token_type::RIGHT_BRACE &&
+           current->type != token_type::END_OF_FILE) {
+        get_next_token();
+        declaration();
+    }
+    consume(token_type::RIGHT_BRACE, "Expected '}' after block");
 }
 
 void parser::expression_statement() {

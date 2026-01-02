@@ -46,7 +46,7 @@ void manage_result(vm_result result) {
     u8 code = -1;
     switch (result) {
         case sting::vm_result::OK: {
-            std::cerr << "Success.\n";
+            // std::cerr << "Success.\n";
             code = 0;
             break;
         }

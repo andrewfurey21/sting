@@ -33,6 +33,14 @@ struct token {
     u8* start;
     u64 length;
     u64 line;
+
+    bool operator==(const token& other) const {
+        return type == other.type &&
+               length == other.length &&
+               line == other.line &&
+               memcmp(start, other.start, length) == 0;
+
+    }
 };
 
 // TODO: track column and do multi lines (nested) comments
