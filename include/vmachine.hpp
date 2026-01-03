@@ -26,9 +26,12 @@ enum class opcode {
     EQUAL,
     PRINT,
     POP,
+    POPN,
     DEFINE_GLOBAL,
     GET_GLOBAL,
     SET_GLOBAL,
+    GET_LOCAL,
+    SET_LOCAL,
 };
 
 std::string opcode_to_string(opcode op);
@@ -195,6 +198,14 @@ struct vmachine {
                     break;
                 }
 
+                case opcode::POPN: {
+                    u32 num = current.a;
+                    for (u32 i{}; i < num; i++) {
+                        value_stack.pop_back();
+                    }
+                    break;
+                }
+
                 case opcode::DEFINE_GLOBAL: {
                     u32 index = current.a;
                     const value& v = chk.constant_pool.at(index);
@@ -226,6 +237,18 @@ struct vmachine {
 
                     globals.at(*name) = value_stack.back();
 
+                    break;
+                }
+
+                case opcode::GET_LOCAL: {
+                    u32 index = current.a;
+                    value_stack.push_back(value_stack.at(value_stack.size() - index - 1));
+                    break;
+                }
+
+                case opcode::SET_LOCAL: {
+                    u32 index = current.a;
+                    value_stack.at(value_stack.size() - index - 1) = value_stack.pop_back();
                     break;
                 }
 

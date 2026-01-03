@@ -34,10 +34,19 @@ struct local {
 };
 
 struct compiler {
-    compiler() : local_count(0), scope_depth(0), locals() {}
-    i64 local_count;
+    compiler() : scope_depth(0), locals() {}
     i64 scope_depth;
     dynarray<local> locals;
+
+    // back through the stack and find first one with same token.
+    i64 resolve_local(const token& t) {
+        for (i64 i{static_cast<i64>(locals.size()) - 1l}; i >= 0; i--) {
+            if (locals.at(i).name == t) {
+                return i;
+            }
+        }
+        return -1;
+    }
 };
 
 class parser {
@@ -57,9 +66,9 @@ public:
     // parse functions that generate code
     void declaration();
     void var_declaration();
-    void declare_variable();
+    void declare_local_variable();
     void variable(bool assignable);
-    u64 parse_variable_name();
+    u64 parse_global_variable_name();
     void named_variable(const token& name, bool assignable);
     void block();
     void statement();
@@ -71,7 +80,7 @@ public:
     void grouping(bool assignable);
     void unary(bool assignable);
     void binary(bool assignable);
-    void print(bool assignable);
+    void print();
 
     token* prev;
     token* current;

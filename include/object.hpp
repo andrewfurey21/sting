@@ -38,7 +38,7 @@ public:
     bool operator==(const string& other);
     bool operator!=(const string& other);
     u64 size() const { return _size; }
-    u8* data() const { return _data; }
+    u8* data() const { return _data; } // not good that it's const.
 
     friend std::ostream& operator<<(std::ostream& os, const string& str);
 

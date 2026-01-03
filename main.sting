@@ -1,15 +1,11 @@
-
-var a = 10;
-var b = 5;
-var c = 9;
-
-var mean = (a + b + c) / 9;
+// todo: test nil
 
 {
-
+    var b = 8;
+    print b;
+    var c = 9;
+    print c;
 }
 
-var b = 10;
-print b;
-
+// print a;
 

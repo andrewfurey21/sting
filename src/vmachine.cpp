@@ -36,12 +36,18 @@ std::string opcode_to_string(opcode op) {
             return "PRINT";
         case opcode::POP:
             return "POP";
+        case opcode::POPN:
+            return "POP N";
         case opcode::DEFINE_GLOBAL:
             return "DEFINE GLOBAL";
         case opcode::GET_GLOBAL:
             return "GET GLOBAL";
         case opcode::SET_GLOBAL:
             return "SET GLOBAL";
+        case opcode::GET_LOCAL:
+            return "GET LOCAL";
+        case opcode::SET_LOCAL:
+            return "SET LOCAL";
         default:
             return "WARNING: UNKNOWN OPCODE";
     }

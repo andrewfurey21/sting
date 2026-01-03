@@ -93,7 +93,6 @@ void parser::parse_precedence(precedence p) {
 
 void parser::declaration() {
     if (current->type == token_type::VAR) {
-        get_next_token();
         var_declaration();
     } else {
         statement();
@@ -101,7 +100,7 @@ void parser::declaration() {
 }
 
 // add local variable to list of variables in given scope.
-void parser::declare_variable() {
+void parser::declare_local_variable() {
     if (c.scope_depth == 0) return;
 
     local l = {
@@ -109,32 +108,35 @@ void parser::declare_variable() {
         .depth = c.scope_depth,
     };
 
+    // check if local with same scope has same name
     for (u64 i{}; i < c.locals.size(); i++) {
         const local& current_local = c.locals.at(i);
-        if (current_local.depth != -1 && current_local.depth < c.scope_depth)
+
+        if (current_local.depth < c.scope_depth) // && current_local.depth != -1
             break;
 
         panic_if(l == current_local, "Error: redeclaration of variable");
     }
 
-    c.locals.push_back(l);
+    c.locals.push_back(l); // local == token + scope
 }
 
-u64 parser::parse_variable_name() {
+u64 parser::parse_global_variable_name() {
     string name(prev->start, prev->length);
     value v(&name, vtype::STRING);
     return chk.load_constant(v);
 }
 
 void parser::var_declaration() {
+    get_next_token();
     consume(token_type::IDENTIFIER, "Expected variable name");
 
     u64 index;
-    declare_variable();
+    declare_local_variable();
     if (c.scope_depth > 0)
         index = 0;
     else {
-        index = parse_variable_name();
+        index = parse_global_variable_name();
     }
 
     if (current->type == token_type::EQUAL) {
@@ -145,9 +147,9 @@ void parser::var_declaration() {
     }
 
     consume(token_type::SEMICOLON, "Expected ';' after variable declaration");
-
-    if (c.scope_depth == 0)
+    if (c.scope_depth == 0) {
         chk.write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
+    }
 }
 
 void parser::variable(bool assignable) {
@@ -155,25 +157,45 @@ void parser::variable(bool assignable) {
 }
 
 void parser::named_variable(const token& tok_name, bool assignable) {
-    u64 index = parse_variable_name();
 
     if (current->type == token_type::EQUAL) {
         panic_if(!assignable, "Cannot assign to this expression");
         get_next_token();
         expression();
-        chk.write_instruction(opcode::SET_GLOBAL, prev->line, index);
+
+        i64 local = c.resolve_local(*prev);
+        if (local == -1) {
+            u64 index = parse_global_variable_name();
+            chk.write_instruction(opcode::SET_GLOBAL, prev->line, index);
+        } else {
+            chk.write_instruction(opcode::SET_LOCAL, prev->line, local);
+        }
     } else {
-        chk.write_instruction(opcode::GET_GLOBAL, prev->line, index);
+
+        i64 local = c.resolve_local(*prev);
+        if (local == -1) {
+            u64 index = parse_global_variable_name();
+            chk.write_instruction(opcode::GET_GLOBAL, prev->line, index);
+        } else {
+            chk.write_instruction(opcode::GET_LOCAL, prev->line, local);
+        }
     }
 }
 
 void parser::statement() {
     if (current->type == token_type::PRINT) {
-        get_next_token();
-        print(false);
+        // get_next_token();
+        print();
     } else if (current->type == token_type::LEFT_BRACE) {
         c.scope_depth++;
         block();
+
+        u32 count = 0;
+        while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
+            count++;
+            c.locals.pop_back();
+        }
+        chk.write_instruction(opcode::POPN, prev->line, count);
         c.scope_depth--;
     } else {
         expression_statement();
@@ -181,12 +203,13 @@ void parser::statement() {
 }
 
 void parser::block() {
-    get_next_token();
-    while (current->type != token_type::RIGHT_BRACE &&
-           current->type != token_type::END_OF_FILE) {
+    std::cerr << "Calling block\n";
+    while (current->type != token_type::RIGHT_BRACE && current->type != token_type::END_OF_FILE) {
         get_next_token();
         declaration();
     }
+
+    std::cerr << "Consuming right brace\n";
     consume(token_type::RIGHT_BRACE, "Expected '}' after block");
 }
 
@@ -315,7 +338,7 @@ void parser::binary(bool assignable) {
     }
 }
 
-void parser::print(bool assignable) {
+void parser::print() {
     expression();
     consume(token_type::SEMICOLON, "Expected ;");
     chk.write_instruction(opcode::PRINT, prev->line);
@@ -365,7 +388,7 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     nullptr,   precedence::NONE},   // [IF]
   {&parser::literal,     nullptr,   precedence::NONE},   // [NIL]
   {nullptr,     nullptr,   precedence::NONE},   // [OR]
-  {&parser::print,     nullptr,   precedence::NONE},   // [PRINT]
+  {nullptr,     nullptr,   precedence::NONE},   // [PRINT]
   {nullptr,     nullptr,   precedence::NONE},   // [RETURN]
   {nullptr,     nullptr,   precedence::NONE},   // [SUPER]
   {nullptr,     nullptr,   precedence::NONE},   // [THIS]
@@ -375,7 +398,6 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     nullptr,   precedence::NONE},   // [ERROR]
   {nullptr,     nullptr,   precedence::NONE},   // [EOF]
 };
-
 
 parse_rule* get_rule(token_type type) {
     return &rules[static_cast<u64>(type)];

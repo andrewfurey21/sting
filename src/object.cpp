@@ -36,7 +36,7 @@ string::~string() {
 
 string::string(const string& other) : _size(other._size), _data(nullptr) {
     allocate_size();
-    copy(_data, other.data(), other.size());
+    copy(_data, other._data, other.size());
 }
 
 string::string(string&& other) {
@@ -48,7 +48,7 @@ string& string::operator=(const string& other) {
     if (this != &other) {
         _size = other._size;
         allocate_size();
-        copy(_data, other.data(), other.size());
+        copy(_data, other._data, other.size());
     }
     return *this;
 }

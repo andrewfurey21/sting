@@ -61,7 +61,9 @@ public:
     u64 capacity() const { return _capacity; }
 
     T& at(u64 index) const {
-        panic_if(index >= _size, "Index out of bounds.", -1);
+        std::ostringstream err;
+        err << "dynarray::at(): Index (" << index << ") out of bounds " << _size << ".";
+        panic_if(index >= _size, err.str(), -1);
         return _data[index];
     }
 
@@ -75,6 +77,7 @@ public:
     }
 
     T pop_back() {
+        panic_if(_size == 0, "dynarray::pop_back(): cannot pop_back on array of size 0");
         T ret = this->at(_size - 1);
         _size--;
         _data[_size].~T();
