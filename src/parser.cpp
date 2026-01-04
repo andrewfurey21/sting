@@ -188,10 +188,8 @@ void parser::statement() {
     if (current->type == token_type::PRINT) {
         print();
     } else if (current->type == token_type::LEFT_BRACE) {
-        std::cout << "ENTERING SCOPE\n" << "\n";
         c.scope_depth++;
         block();
-        std::cout << "EXITING SCOPE\n" << "\n";
 
         u32 count = 0;
         while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
@@ -206,13 +204,11 @@ void parser::statement() {
 }
 
 void parser::block() {
-    std::cerr << "Calling block\n";
     get_next_token();
     while (current->type != token_type::RIGHT_BRACE && current->type != token_type::END_OF_FILE) {
         declaration();
     }
 
-    std::cerr << "Consuming right brace\n";
     consume(token_type::RIGHT_BRACE, "Expected '}' after block");
 }
 
