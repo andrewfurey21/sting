@@ -196,6 +196,7 @@ private:
         u8* key_addr;
         u64 key_size;
 
+        // todo: need a proper generic hash
         if constexpr (std::is_same_v<Key, string>) {
             key_addr = key.data();
             key_size = key.size();

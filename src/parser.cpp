@@ -146,10 +146,10 @@ void parser::var_declaration() {
         chk.write_instruction(opcode::NIL, current->line);
     }
 
-    consume(token_type::SEMICOLON, "Expected ';' after variable declaration");
     if (c.scope_depth == 0) {
         chk.write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
     }
+    consume(token_type::SEMICOLON, "Expected ';' after variable declaration");
 }
 
 void parser::variable(bool assignable) {
@@ -160,14 +160,16 @@ void parser::named_variable(const token& tok_name, bool assignable) {
 
     if (current->type == token_type::EQUAL) {
         panic_if(!assignable, "Cannot assign to this expression");
-        get_next_token();
-        expression();
 
         i64 local = c.resolve_local(*prev);
         if (local == -1) {
             u64 index = parse_global_variable_name();
+        get_next_token();
+        expression();
             chk.write_instruction(opcode::SET_GLOBAL, prev->line, index);
         } else {
+        get_next_token();
+        expression();
             chk.write_instruction(opcode::SET_LOCAL, prev->line, local);
         }
     } else {
@@ -184,11 +186,12 @@ void parser::named_variable(const token& tok_name, bool assignable) {
 
 void parser::statement() {
     if (current->type == token_type::PRINT) {
-        // get_next_token();
         print();
     } else if (current->type == token_type::LEFT_BRACE) {
+        std::cout << "ENTERING SCOPE\n" << "\n";
         c.scope_depth++;
         block();
+        std::cout << "EXITING SCOPE\n" << "\n";
 
         u32 count = 0;
         while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
@@ -204,8 +207,8 @@ void parser::statement() {
 
 void parser::block() {
     std::cerr << "Calling block\n";
+    get_next_token();
     while (current->type != token_type::RIGHT_BRACE && current->type != token_type::END_OF_FILE) {
-        get_next_token();
         declaration();
     }
 
@@ -339,6 +342,7 @@ void parser::binary(bool assignable) {
 }
 
 void parser::print() {
+    get_next_token();
     expression();
     consume(token_type::SEMICOLON, "Expected ;");
     chk.write_instruction(opcode::PRINT, prev->line);

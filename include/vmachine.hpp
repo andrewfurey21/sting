@@ -213,6 +213,7 @@ struct vmachine {
                     // this looks really bad but guaranteed to be a string.
                     globals.insert(*name, value_stack.back());
                     value_stack.pop_back();
+                    std::cout << "DEFINED: " << *name << "\n";
 
                     break;
                 }
@@ -225,6 +226,7 @@ struct vmachine {
 
                     panic_if(!globals.contains(*name), "Cannot get undefined variable");
 
+                    std::cout << "GOT: " << *name << "\n";
                     value_stack.push_back(globals.at(*name));
                     break;
                 }
@@ -235,6 +237,7 @@ struct vmachine {
                     const string* name = static_cast<string*>(v.obj());
                     panic_if(!globals.contains(*name), "Cannot set undefined variable");
 
+                    std::cout << "SET: " << *name << "\n";
                     globals.at(*name) = value_stack.back();
 
                     break;
@@ -242,13 +245,13 @@ struct vmachine {
 
                 case opcode::GET_LOCAL: {
                     u32 index = current.a;
-                    value_stack.push_back(value_stack.at(value_stack.size() - index - 1));
+                    value_stack.push_back(value_stack.at(index));
                     break;
                 }
 
                 case opcode::SET_LOCAL: {
                     u32 index = current.a;
-                    value_stack.at(value_stack.size() - index - 1) = value_stack.pop_back();
+                    value_stack.at(index) = value_stack.back();
                     break;
                 }
 

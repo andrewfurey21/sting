@@ -8,6 +8,10 @@
 #include "object.hpp"
 #include "hashmap.hpp"
 
+/*
+ *  Parsing + codegen
+ */
+
 namespace sting {
 
 enum precedence {
@@ -36,7 +40,8 @@ struct local {
 struct compiler {
     compiler() : scope_depth(0), locals() {}
     i64 scope_depth;
-    dynarray<local> locals;
+    dynarray<local> locals; // kind of like simulating stack but at compile time
+    // get get correct location of local on the stack.
 
     // back through the stack and find first one with same token.
     i64 resolve_local(const token& t) {

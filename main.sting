@@ -1,11 +1,24 @@
-// todo: test nil
+var a = "andrew is the best";
+var g = "last";
 
 {
-    var b = 8;
-    print b;
-    var c = 9;
-    print c;
+    var d = 10;
+    d = a;
+    print d;
+    print a;
+    {
+    	var e = d;
+	print e;
+	print d;
+	print 10;
+	{
+	    var g = 10 * 7;
+	    print g;
+	    g = a;
+	    print g;
+	}
+    }
 }
 
-// print a;
-
+g = a;
+print g;
