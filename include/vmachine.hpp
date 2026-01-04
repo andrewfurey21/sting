@@ -211,6 +211,7 @@ struct vmachine {
                     const value& v = chk.constant_pool.at(index);
                     const string* name = static_cast<string*>(v.obj());
                     // this looks really bad but guaranteed to be a string.
+                    panic_if(globals.contains(*name), "Already defined global");
                     globals.insert(*name, value_stack.back());
                     value_stack.pop_back();
 

@@ -47,6 +47,7 @@ struct compiler {
     i64 resolve_local(const token& t) {
         for (i64 i{static_cast<i64>(locals.size()) - 1l}; i >= 0; i--) {
             if (locals.at(i).name == t) {
+                panic_if(locals.at(i).depth == -1, "Cannot define local with itself.");
                 return i;
             }
         }

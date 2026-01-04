@@ -1,24 +1,10 @@
-var a = "andrew is the best";
-var g = "last";
 
+var d = 9;
 {
-    var d = 10;
-    d = a;
+    var d = d;
     print d;
-    print a;
-    {
-    	var e = d;
-	print e;
-	print d;
-	print 10;
-	{
-	    var g = 10 * 7;
-	    print g;
-	    g = a;
-	    print g;
-	}
-    }
 }
 
-g = a;
-print g;
+print d;
+
+

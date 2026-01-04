@@ -105,14 +105,15 @@ void parser::declare_local_variable() {
 
     local l = {
         .name = *prev,
-        .depth = c.scope_depth,
+        // .depth = c.scope_depth,
+        .depth = -1,
     };
 
     // check if local with same scope has same name
-    for (u64 i{}; i < c.locals.size(); i++) {
-        const local& current_local = c.locals.at(i);
+    for (u64 i = c.locals.size(); i > 0; i--) {
+        const local& current_local = c.locals.at(i - 1);
 
-        if (current_local.depth < c.scope_depth) // && current_local.depth != -1
+        if (current_local.depth < c.scope_depth && current_local.depth != -1)
             break;
 
         panic_if(l == current_local, "Error: redeclaration of variable");
@@ -133,15 +134,18 @@ void parser::var_declaration() {
 
     u64 index;
     declare_local_variable();
-    if (c.scope_depth > 0)
+    if (c.scope_depth > 0) {
         index = 0;
-    else {
+        // mark local as initialized by setting its scope.
+        //c.locals.back().depth = c.scope_depth;
+    } else {
         index = parse_global_variable_name();
     }
 
     if (current->type == token_type::EQUAL) {
         get_next_token();
         expression();
+        c.locals.back().depth = c.scope_depth;
     } else {
         chk.write_instruction(opcode::NIL, current->line);
     }
@@ -164,12 +168,12 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         i64 local = c.resolve_local(*prev);
         if (local == -1) {
             u64 index = parse_global_variable_name();
-        get_next_token();
-        expression();
+            get_next_token();
+            expression();
             chk.write_instruction(opcode::SET_GLOBAL, prev->line, index);
         } else {
-        get_next_token();
-        expression();
+            get_next_token();
+            expression();
             chk.write_instruction(opcode::SET_LOCAL, prev->line, local);
         }
     } else {
