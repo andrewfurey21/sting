@@ -220,7 +220,7 @@ void parser::if_statement() {
         u64 prev_size = chk.bytecode.size();
         statement();
         u64 current_size = chk.bytecode.size();
-        backpatch_else.a = current_size - prev_size - 1;
+        backpatch_else.a = current_size - prev_size;
         backpatch_if.a++;
     }
 }
