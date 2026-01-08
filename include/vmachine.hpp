@@ -32,6 +32,7 @@ enum class opcode {
     SET_GLOBAL,
     GET_LOCAL,
     SET_LOCAL,
+    BRANCH_FALSE,
     BRANCH,
 };
 
@@ -254,11 +255,17 @@ struct vmachine {
                     break;
                 }
 
-                case opcode::BRANCH: {
+                case opcode::BRANCH_FALSE: {
                     u32 increment = current.a;
                     if (!value_stack.pop_back().byte()) {
                         pc += increment;
                     }
+                    break;
+                }
+
+                case opcode::BRANCH: {
+                    u32 increment = current.a;
+                    pc += increment;
                     break;
                 }
 

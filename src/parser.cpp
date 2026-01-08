@@ -192,7 +192,8 @@ void parser::statement() {
             count++;
             c.locals.pop_back();
         }
-        chk.write_instruction(opcode::POPN, prev->line, count);
+        if (count != 0)
+            chk.write_instruction(opcode::POPN, prev->line, count);
         c.scope_depth--;
     } else {
         expression_statement();
@@ -205,12 +206,23 @@ void parser::if_statement() {
     expression();
     consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
 
-    chk.write_instruction(opcode::BRANCH, prev->line, 0);
+    chk.write_instruction(opcode::BRANCH_FALSE, prev->line, 0);
     u64 prev_size = chk.bytecode.size();
-    instruction& backpatch = chk.bytecode.back();
+    instruction& backpatch_if = chk.bytecode.back();
     statement();
     u64 current_size = chk.bytecode.size();
-    backpatch.a = current_size - prev_size - 1;
+    backpatch_if.a = current_size - prev_size;
+
+    if (current->type == token_type::ELSE) {
+        get_next_token();
+        chk.write_instruction(opcode::BRANCH, prev->line, 0);
+        instruction& backpatch_else = chk.bytecode.back();
+        u64 prev_size = chk.bytecode.size();
+        statement();
+        u64 current_size = chk.bytecode.size();
+        backpatch_else.a = current_size - prev_size - 1;
+        backpatch_if.a++;
+    }
 }
 
 void parser::block() {
