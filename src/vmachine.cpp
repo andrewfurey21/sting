@@ -48,6 +48,8 @@ std::string opcode_to_string(opcode op) {
             return "GET LOCAL";
         case opcode::SET_LOCAL:
             return "SET LOCAL";
+        case opcode::BRANCH:
+            return "BRANCH (if false)";
         default:
             return "WARNING: UNKNOWN OPCODE";
     }

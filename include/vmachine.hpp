@@ -32,6 +32,7 @@ enum class opcode {
     SET_GLOBAL,
     GET_LOCAL,
     SET_LOCAL,
+    BRANCH,
 };
 
 std::string opcode_to_string(opcode op);
@@ -250,6 +251,14 @@ struct vmachine {
                 case opcode::SET_LOCAL: {
                     u32 index = current.a;
                     value_stack.at(index) = value_stack.back();
+                    break;
+                }
+
+                case opcode::BRANCH: {
+                    u32 increment = current.a;
+                    if (!value_stack.pop_back().byte()) {
+                        pc += increment;
+                    }
                     break;
                 }
 

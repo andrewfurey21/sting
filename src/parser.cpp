@@ -32,9 +32,6 @@ bool parser::parse() {
     return true;
 }
 
-dynarray<token>& parser::get_tokens() { return tokens; }
-chunk& parser::get_chunk() { return chk; }
-
 void parser::error_at_token(const token& t, const std::string& msg) {
     if (panic) return;
     panic = true;
@@ -86,9 +83,6 @@ void parser::parse_precedence(precedence p) {
         (this->*infix_rule)(assignable);
         ci = static_cast<int>(get_rule(current->type)->prec);
     }
-
-    // panic_if(assignable && current->type == token_type::EQUAL,
-    //          "Cannot assign to this expression.");
 }
 
 void parser::declaration() {
@@ -105,20 +99,17 @@ void parser::declare_local_variable() {
 
     local l = {
         .name = *prev,
-        // .depth = c.scope_depth,
         .depth = -1,
     };
 
     // check if local with same scope has same name
     for (u64 i = c.locals.size(); i > 0; i--) {
         const local& current_local = c.locals.at(i - 1);
-
         if (current_local.depth < c.scope_depth && current_local.depth != -1)
             break;
 
         panic_if(l == current_local, "Error: redeclaration of variable");
     }
-
     c.locals.push_back(l); // local == token + scope
 }
 
@@ -190,6 +181,8 @@ void parser::named_variable(const token& tok_name, bool assignable) {
 void parser::statement() {
     if (current->type == token_type::PRINT) {
         print();
+    } else if (current->type == token_type::IF) {
+        if_statement();
     } else if (current->type == token_type::LEFT_BRACE) {
         c.scope_depth++;
         block();
@@ -204,6 +197,20 @@ void parser::statement() {
     } else {
         expression_statement();
     }
+}
+
+void parser::if_statement() {
+    get_next_token();
+    consume(token_type::LEFT_PAREN, "Expected '(' after if");
+    expression();
+    consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
+
+    chk.write_instruction(opcode::BRANCH, prev->line, 0);
+    u64 prev_size = chk.bytecode.size();
+    instruction& backpatch = chk.bytecode.back();
+    statement();
+    u64 current_size = chk.bytecode.size();
+    backpatch.a = current_size - prev_size - 1;
 }
 
 void parser::block() {

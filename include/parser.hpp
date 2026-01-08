@@ -60,8 +60,8 @@ public:
     parser();
     parser(const std::string& name);
     bool parse();
-    dynarray<token>& get_tokens();
-    chunk& get_chunk();
+    dynarray<token>& get_tokens() { return tokens; }
+    chunk& get_chunk() { return chk; }
     void error_at_token(const token& t, const std::string& msg);
     void check_current_token(const token_type expected, const std::string& mesg);
     void get_next_token();
@@ -78,6 +78,7 @@ public:
     void named_variable(const token& name, bool assignable);
     void block();
     void statement();
+    void if_statement();
     void expression_statement();
     void expression();
     void number(bool assignable);

@@ -1,10 +1,6 @@
 
-var d = 9;
-{
-    var a = d;
-    print d;
-    a = a + d;
+var a = 4;
+if (a > 5) {
     print a;
 }
-
-print d;
+print a;
