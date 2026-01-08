@@ -1,10 +1,10 @@
 
 var d = 9;
 {
-    var d = d;
+    var a = d;
     print d;
+    a = a + d;
+    print a;
 }
 
 print d;
-
-

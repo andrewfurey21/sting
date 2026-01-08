@@ -24,6 +24,9 @@ value::value(object* o, vtype t) {
 
 value::~value() {
     // shouldn't we free this->o
+    // if (type == vtype::STRING) {
+    //
+    // }
 }
 
 value value::operator+(const value& other) const {

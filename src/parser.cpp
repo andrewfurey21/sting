@@ -136,8 +136,6 @@ void parser::var_declaration() {
     declare_local_variable();
     if (c.scope_depth > 0) {
         index = 0;
-        // mark local as initialized by setting its scope.
-        //c.locals.back().depth = c.scope_depth;
     } else {
         index = parse_global_variable_name();
     }
@@ -145,7 +143,8 @@ void parser::var_declaration() {
     if (current->type == token_type::EQUAL) {
         get_next_token();
         expression();
-        c.locals.back().depth = c.scope_depth;
+        if (c.locals.size() >= 1)
+            c.locals.back().depth = c.scope_depth;
     } else {
         chk.write_instruction(opcode::NIL, current->line);
     }

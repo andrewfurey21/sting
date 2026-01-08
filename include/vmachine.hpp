@@ -86,7 +86,7 @@ enum class vm_result { // just result?
 
 struct vmachine {
     vmachine(const chunk& chk) : chk(chk) {
-        pc = chk.bytecode.data();
+        pc = this->chk.bytecode.data();
     }
 
     vm_result run_chunk() {

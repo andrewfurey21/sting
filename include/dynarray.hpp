@@ -17,7 +17,7 @@ public:
         _capacity(capacity),
         _size(0)
     {
-        _data = allocate_capacity();
+        _data = allocate(capacity);
     }
 
     dynarray(const std::initializer_list<T>& list) :
@@ -84,7 +84,8 @@ public:
         return ret;
     }
 
-    T& back() {
+    T& back() const {
+        panic_if(_size <= 0, "dynarray::back(): cannot get back of array of size 0");
         return _data[_size - 1];
     }
 
@@ -93,14 +94,15 @@ public:
 
 private:
 
-    T* allocate_capacity() {
-        return static_cast<T*>(malloc(sizeof(T) * this->_capacity));
+    T* allocate(u64 capacity) {
+        T* d = static_cast<T*>(malloc(sizeof(T) * _capacity));
+        return d;
     }
 
     T* copy_array(const dynarray<T>& other) {
-        T* data = allocate_capacity();
-        for (u64 i{0}; i < this->size(); i++) {
-            new (&data[i]) T(other.at(i));
+        T* data = allocate(other._capacity);
+        for (u64 i{}; i < this->size(); i++) {
+            new (data + i) T(other.at(i));
         }
         return data;
     }
@@ -112,10 +114,11 @@ private:
     }
 
     void free_array(T* data) {
-        for (u64 i{0}; i < this->size(); i++) {
+        for (u64 i{}; i < this->size(); i++) {
             data[i].~T();
         }
         free(data);
+
         data = nullptr;
     }
 
@@ -132,7 +135,7 @@ private:
 
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const dynarray<T>& other) {
-    for (u64 i{0}; i < other.size(); i++) {
+    for (u64 i{}; i < other.size(); i++) {
         os << std::setw(4) << std::setfill('0') << i << ' ';
         os << other.at(i);
         if (i != other.size() - 1) {
