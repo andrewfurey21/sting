@@ -373,6 +373,15 @@ void parser::binary_and(bool assignable) {
     backpatch(_and);
 }
 
+void parser::binary_or(bool assignable) { // could just have  a BRANCH_TRUE.
+    u64 first_not = emit_jump(opcode::BRANCH_FALSE);
+    u64 first_true = emit_jump(opcode::BRANCH);
+    backpatch(first_not);
+    chk.write_instruction(opcode::POP, prev->line);
+    parse_precedence(precedence::OR);
+    backpatch(first_true);
+}
+
 void parser::print() {
     get_next_token();
     expression();
@@ -423,7 +432,7 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {nullptr,     nullptr,   precedence::NONE},   // [FUN]
   {nullptr,     nullptr,   precedence::NONE},   // [IF]
   {&parser::literal,     nullptr,   precedence::NONE},   // [NIL]
-  {nullptr,     nullptr,   precedence::NONE},   // [OR]
+  {nullptr,     &parser::binary_or,   precedence::OR},   // [OR]
   {nullptr,     nullptr,   precedence::NONE},   // [PRINT]
   {nullptr,     nullptr,   precedence::NONE},   // [RETURN]
   {nullptr,     nullptr,   precedence::NONE},   // [SUPER]

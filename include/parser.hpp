@@ -90,6 +90,7 @@ public:
     void unary(bool assignable);
     void binary(bool assignable);
     void binary_and(bool assignable);
+    void binary_or(bool assignable);
     void print();
 
     token* prev;
