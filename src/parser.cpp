@@ -367,6 +367,10 @@ void parser::binary(bool assignable) {
 }
 
 void parser::binary_and(bool assignable) {
+    u64 _and = emit_jump(opcode::BRANCH_FALSE);
+    chk.write_instruction(opcode::POP, prev->line);
+    parse_precedence(precedence::AND);
+    backpatch(_and);
 }
 
 void parser::print() {
@@ -411,7 +415,7 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {&parser::variable,     nullptr,   precedence::NONE},   // [IDENTIFIER]
   {&parser::str,     nullptr,   precedence::NONE},   // [STRING]
   {&parser::number,   nullptr,   precedence::NONE},   // [NUMBER]
-  {nullptr,     &parser::binary_and,   precedence::NONE},   // [AND]
+  {nullptr,     &parser::binary_and,   precedence::AND},   // [AND]
   {nullptr,     nullptr,   precedence::NONE},   // [CLASS]
   {nullptr,     nullptr,   precedence::NONE},   // [ELSE]
   {&parser::literal,     nullptr,   precedence::NONE},   // [FALSE]
