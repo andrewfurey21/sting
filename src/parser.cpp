@@ -200,13 +200,14 @@ void parser::statement() {
     }
 }
 
-void parser::emit_jump(opcode branch_type) {
+u64 parser::emit_jump(opcode branch_type) {
     chk.write_instruction(branch_type, prev->line, 0);
-    u64 prev_size = chk.bytecode.size();
-    instruction& backpatch = chk.bytecode.back();
-    statement();
+    return chk.bytecode.size();
+}
+
+void parser::backpatch(u64 branch) {
     u64 current_size = chk.bytecode.size();
-    backpatch.a = current_size - prev_size;
+    chk.bytecode.at(branch - 1).a = current_size - branch;
 }
 
 void parser::if_statement() {
@@ -215,13 +216,20 @@ void parser::if_statement() {
     expression();
     consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
 
-    emit_jump(opcode::BRANCH_FALSE);
+    u64 if_statement = emit_jump(opcode::BRANCH_FALSE);
+    statement();
 
     if (current->type == token_type::ELSE) {
         get_next_token();
-        emit_jump(opcode::BRANCH);
+        u64 else_statement = emit_jump(opcode::BRANCH);
+        backpatch(if_statement);
+        // need to check if else statement exists in order to backpatch properly
+        statement();
+        backpatch(else_statement);
+    } else {
+        backpatch(if_statement);
     }
-    chk.write_instruction(opcode::POP, prev->line, 1);
+    chk.write_instruction(opcode::POP, prev->line);
 }
 
 void parser::block() {

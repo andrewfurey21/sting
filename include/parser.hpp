@@ -68,7 +68,8 @@ public:
     void consume(token_type type, const char* msg);
     void parse_precedence(precedence p);
     bool match(token_type type);
-    void emit_jump(opcode branch_type);
+    u64 emit_jump(opcode branch_type);
+    void backpatch(u64 branch);
 
     // parse functions that generate code
     void declaration();

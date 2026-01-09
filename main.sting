@@ -1,21 +1,11 @@
-var a = 100;
+var a = 10;
+var b = false and true;
 
-if (a < 10) {
-    a = 2000;
-    a = a * 2;
-    a = 0;
-    a = 5 +a + 5; // 15
+if (0 < a and a < 100 and b) {
+    print "A is between 0 and 100";
 } else {
-    a = 2000;
-    a = a * 2;
-    a = 4;
-    a = 2 +a + 1; // 7
+    print "else1";
+    print "else2";
 }
-
-a = a * a;
-print a;
-print 1;
-print 2;
-print 3;
-print 4;
-print 5;
+print "hello";
+print "goodbye";
