@@ -68,6 +68,7 @@ public:
     void consume(token_type type, const char* msg);
     void parse_precedence(precedence p);
     bool match(token_type type);
+    void emit_jump(opcode branch_type);
 
     // parse functions that generate code
     void declaration();
@@ -87,6 +88,7 @@ public:
     void grouping(bool assignable);
     void unary(bool assignable);
     void binary(bool assignable);
+    void binary_and(bool assignable);
     void print();
 
     token* prev;

@@ -200,29 +200,28 @@ void parser::statement() {
     }
 }
 
+void parser::emit_jump(opcode branch_type) {
+    chk.write_instruction(branch_type, prev->line, 0);
+    u64 prev_size = chk.bytecode.size();
+    instruction& backpatch = chk.bytecode.back();
+    statement();
+    u64 current_size = chk.bytecode.size();
+    backpatch.a = current_size - prev_size;
+}
+
 void parser::if_statement() {
     get_next_token();
     consume(token_type::LEFT_PAREN, "Expected '(' after if");
     expression();
     consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
 
-    chk.write_instruction(opcode::BRANCH_FALSE, prev->line, 0);
-    u64 prev_size = chk.bytecode.size();
-    instruction& backpatch_if = chk.bytecode.back();
-    statement();
-    u64 current_size = chk.bytecode.size();
-    backpatch_if.a = current_size - prev_size;
+    emit_jump(opcode::BRANCH_FALSE);
 
     if (current->type == token_type::ELSE) {
         get_next_token();
-        chk.write_instruction(opcode::BRANCH, prev->line, 0);
-        instruction& backpatch_else = chk.bytecode.back();
-        u64 prev_size = chk.bytecode.size();
-        statement();
-        u64 current_size = chk.bytecode.size();
-        backpatch_else.a = current_size - prev_size;
-        backpatch_if.a++;
+        emit_jump(opcode::BRANCH);
     }
+    chk.write_instruction(opcode::POP, prev->line, 1);
 }
 
 void parser::block() {
@@ -359,6 +358,9 @@ void parser::binary(bool assignable) {
     }
 }
 
+void parser::binary_and(bool assignable) {
+}
+
 void parser::print() {
     get_next_token();
     expression();
@@ -401,7 +403,7 @@ parse_rule rules[] = { // order matters here, indexing with token_type
   {&parser::variable,     nullptr,   precedence::NONE},   // [IDENTIFIER]
   {&parser::str,     nullptr,   precedence::NONE},   // [STRING]
   {&parser::number,   nullptr,   precedence::NONE},   // [NUMBER]
-  {nullptr,     nullptr,   precedence::NONE},   // [AND]
+  {nullptr,     &parser::binary_and,   precedence::NONE},   // [AND]
   {nullptr,     nullptr,   precedence::NONE},   // [CLASS]
   {nullptr,     nullptr,   precedence::NONE},   // [ELSE]
   {&parser::literal,     nullptr,   precedence::NONE},   // [FALSE]

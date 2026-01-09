@@ -1,5 +1,21 @@
-var a = 8;
-if (a > 9)
-    print "a is greater than 9";
-else
-    print "a is less than or equal to 9";
+var a = 100;
+
+if (a < 10) {
+    a = 2000;
+    a = a * 2;
+    a = 0;
+    a = 5 +a + 5; // 15
+} else {
+    a = 2000;
+    a = a * 2;
+    a = 4;
+    a = 2 +a + 1; // 7
+}
+
+a = a * a;
+print a;
+print 1;
+print 2;
+print 3;
+print 4;
+print 5;

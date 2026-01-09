@@ -257,7 +257,7 @@ struct vmachine {
 
                 case opcode::BRANCH_FALSE: {
                     u32 increment = current.a;
-                    if (!value_stack.pop_back().byte()) {
+                    if (!value_stack.back().byte()) {
                         pc += increment;
                     }
                     break;
