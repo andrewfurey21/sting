@@ -1,15 +1,5 @@
 
-var a = 4;
 
-while (a > 0) {
-    print a;
-    a = a - 1;
-
-    var i = 3;
-    while (i > 0) {
-        print i;
-	i = i - 1;
-    }
+for (;;) {
+   print "hello, world";
 }
-
-print "FINISHED";

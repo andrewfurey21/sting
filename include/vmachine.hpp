@@ -99,7 +99,7 @@ struct vmachine {
 
             switch(current.op) {
                 case opcode::RETURN: {
-                    std::cout << "stack size at end: " << value_stack.size() << "\n" << std::flush;
+                    // std::cout << "stack size at end: " << value_stack.size() << "\n" << std::flush;
                     return vm_result::OK;
                 }
 

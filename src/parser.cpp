@@ -185,6 +185,8 @@ void parser::statement() {
         if_statement();
     } else if (current->type == token_type::WHILE) {
         while_statement();
+    } else if (current->type == token_type::FOR) {
+        for_statement();
     } else if (current->type == token_type::LEFT_BRACE) {
         c.scope_depth++;
         block();
@@ -227,6 +229,21 @@ void parser::while_statement() {
     chk.write_instruction(opcode::LOOP, prev->line, end - start + 1);
     backpatch(jump_if_false);
     chk.write_instruction(opcode::POP, prev->line);
+}
+
+void parser::for_statement() {
+    get_next_token();
+    u64 loop_line = prev->line;
+    u64 start = chk.bytecode.size();
+    consume(token_type::LEFT_PAREN, "Expected '(' after while");
+    consume(token_type::SEMICOLON, "Expected ';' after while");
+    consume(token_type::SEMICOLON, "Expected ';' after while");
+    consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
+
+
+    statement();
+    u64 end = chk.bytecode.size();
+    chk.write_instruction(opcode::LOOP, loop_line, end - start + 1);
 }
 
 void parser::if_statement() {
