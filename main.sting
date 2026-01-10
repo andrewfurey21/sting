@@ -1,19 +1,15 @@
-var a = 11;
-var b = false or true;
-print b;
 
-if (a == 5 or a == 10) {
-	print "a is 5 or 10";
-print "hello";
-print "hello";
-print "hello";
-} else {
-	print "a is not 5 or 10";
-print "hello";
-print "hello";
-print "hello";
+var a = 4;
+
+while (a > 0) {
+    print a;
+    a = a - 1;
+
+    var i = 3;
+    while (i > 0) {
+        print i;
+	i = i - 1;
+    }
 }
 
-print "hello";
-print "hello";
-print "hello";
+print "FINISHED";

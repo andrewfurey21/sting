@@ -81,6 +81,7 @@ public:
     void block();
     void statement();
     void if_statement();
+    void while_statement();
     void expression_statement();
     void expression();
     void number(bool assignable);

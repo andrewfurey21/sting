@@ -34,6 +34,7 @@ enum class opcode {
     SET_LOCAL,
     BRANCH_FALSE,
     BRANCH,
+    LOOP, // just branch but backwards
 };
 
 std::string opcode_to_string(opcode op);
@@ -267,6 +268,12 @@ struct vmachine {
                 case opcode::BRANCH: {
                     u32 increment = current.a;
                     pc += increment;
+                    break;
+                }
+
+                case opcode::LOOP: {
+                    u32 increment = current.a;
+                    pc -= increment;
                     break;
                 }
 

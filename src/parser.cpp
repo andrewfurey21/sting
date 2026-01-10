@@ -183,6 +183,8 @@ void parser::statement() {
         print();
     } else if (current->type == token_type::IF) {
         if_statement();
+    } else if (current->type == token_type::WHILE) {
+        while_statement();
     } else if (current->type == token_type::LEFT_BRACE) {
         c.scope_depth++;
         block();
@@ -208,6 +210,23 @@ u64 parser::emit_jump(opcode branch_type) {
 void parser::backpatch(u64 branch) {
     u64 current_size = chk.bytecode.size();
     chk.bytecode.at(branch - 1).a = current_size - branch;
+}
+
+void parser::while_statement() {
+    get_next_token();
+    consume(token_type::LEFT_PAREN, "Expected '(' after while");
+    u64 start = chk.bytecode.size();
+    expression();
+    consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
+
+    u64 jump_if_false = emit_jump(opcode::BRANCH_FALSE);
+    chk.write_instruction(opcode::POP, prev->line);
+
+    statement();
+    u64 end = chk.bytecode.size();
+    chk.write_instruction(opcode::LOOP, prev->line, end - start + 1);
+    backpatch(jump_if_false);
+    chk.write_instruction(opcode::POP, prev->line);
 }
 
 void parser::if_statement() {

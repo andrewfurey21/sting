@@ -52,6 +52,8 @@ std::string opcode_to_string(opcode op) {
             return "BRANCH (if false)";
         case opcode::BRANCH:
             return "BRANCH";
+        case opcode::LOOP:
+            return "LOOP";
         default:
             return "WARNING: UNKNOWN OPCODE";
     }
