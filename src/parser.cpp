@@ -233,17 +233,33 @@ void parser::while_statement() {
 
 void parser::for_statement() {
     get_next_token();
-    u64 loop_line = prev->line;
+    consume(token_type::LEFT_PAREN, "Expected '(' after for");
+
+    var_declaration(); // var i = 0; a
+
     u64 start = chk.bytecode.size();
-    consume(token_type::LEFT_PAREN, "Expected '(' after while");
-    consume(token_type::SEMICOLON, "Expected ';' after while");
-    consume(token_type::SEMICOLON, "Expected ';' after while");
-    consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
+    expression(); // i < size; b
+    consume(token_type::SEMICOLON, "Expected ';' after expression");
 
+    u64 end_for_loop = emit_jump(opcode::BRANCH_FALSE);
+    chk.write_instruction(opcode::POP, prev->line);
 
+    u64 to_statement = emit_jump(opcode::BRANCH);
+    u64 to_inc = chk.bytecode.size();
+    expression(); // i++
+    consume(token_type::RIGHT_PAREN, "Expected ')' after for loop statement");
+
+    chk.write_instruction(opcode::LOOP, prev->line, chk.bytecode.size() - start + 1);
+
+    backpatch(to_statement);
     statement();
-    u64 end = chk.bytecode.size();
-    chk.write_instruction(opcode::LOOP, loop_line, end - start + 1);
+
+    chk.write_instruction(opcode::LOOP, prev->line, chk.bytecode.size() - to_inc + 1);
+
+
+    // end_for_loop
+    backpatch(end_for_loop);
+    chk.write_instruction(opcode::POP, prev->line);
 }
 
 void parser::if_statement() {
