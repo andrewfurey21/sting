@@ -232,6 +232,7 @@ void parser::while_statement() {
 }
 
 void parser::for_statement() {
+    // this isn't great, the variable will be in a different scope than the block
     c.scope_depth += 1;
     get_next_token();
     consume(token_type::LEFT_PAREN, "Expected '(' after for");
@@ -249,6 +250,7 @@ void parser::for_statement() {
     u64 to_statement = emit_jump(opcode::BRANCH);
     u64 to_inc = chk.bytecode.size();
     expression(); // i++
+    chk.write_instruction(opcode::POP, prev->line);
     consume(token_type::RIGHT_PAREN, "Expected ')' after for loop statement");
 
     chk.write_instruction(opcode::LOOP, prev->line, chk.bytecode.size() - start + 1);
