@@ -232,12 +232,14 @@ void parser::while_statement() {
 }
 
 void parser::for_statement() {
+    c.scope_depth += 1;
     get_next_token();
     consume(token_type::LEFT_PAREN, "Expected '(' after for");
 
+    // must have a var declaration.
     var_declaration(); // var i = 0; a
 
-    u64 start = chk.bytecode.size();
+    u64 start = chk.bytecode.size(); // check
     expression(); // i < size; b
     consume(token_type::SEMICOLON, "Expected ';' after expression");
 
@@ -256,10 +258,10 @@ void parser::for_statement() {
 
     chk.write_instruction(opcode::LOOP, prev->line, chk.bytecode.size() - to_inc + 1);
 
-
     // end_for_loop
     backpatch(end_for_loop);
     chk.write_instruction(opcode::POP, prev->line);
+    c.scope_depth -= 1;
 }
 
 void parser::if_statement() {
