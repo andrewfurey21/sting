@@ -273,21 +273,18 @@ void parser::if_statement() {
     consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
 
     u64 if_statement = emit_jump(opcode::BRANCH_FALSE);
-    chk.write_instruction(opcode::POP, prev->line);
-    // resolve local assumes there are no extraneous values on stack
     statement();
 
     if (current->type == token_type::ELSE) {
         get_next_token();
         u64 else_statement = emit_jump(opcode::BRANCH);
         backpatch(if_statement);
-        chk.write_instruction(opcode::POP, prev->line);
-        // need to check if else statement exists in order to backpatch properly
         statement();
         backpatch(else_statement);
     } else {
         backpatch(if_statement);
     }
+    chk.write_instruction(opcode::POP, prev->line);
 }
 
 void parser::block() {
