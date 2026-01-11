@@ -42,8 +42,6 @@ std::string opcode_to_string(opcode op);
 struct instruction {
     opcode op;
     u32 a;
-    u32 b; // TODO: remove
-    u32 c;
 
     friend std::ostream& operator<<(std::ostream& os, const instruction& instr);
 };
@@ -56,12 +54,10 @@ struct chunk {
     dynarray<value> constant_pool;
     dynarray<u64> lines;
 
-    void write_instruction(const opcode op, u64 line, u32 a = 0, u32 b = 0, u32 c = 0) {
+    void write_instruction(const opcode op, u64 line, u32 a = 0) {
         instruction instr = {
             .op = op,
             .a = a,
-            .b = b,
-            .c = c
         };
 
         lines.push_back(line);
@@ -99,7 +95,6 @@ struct vmachine {
 
             switch(current.op) {
                 case opcode::RETURN: {
-                    // std::cout << "stack size at end: " << value_stack.size() << "\n" << std::flush;
                     return vm_result::OK;
                 }
 

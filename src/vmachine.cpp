@@ -60,7 +60,7 @@ std::string opcode_to_string(opcode op) {
 }
 
 std::ostream& operator<<(std::ostream& os, const instruction& instr) {
-    os << opcode_to_string(instr.op) << ": " << instr.a << ", " << instr.b << ", " << instr.c << ", ";
+    os << opcode_to_string(instr.op) << ": " << instr.a;
     return os;
 }
 
