@@ -248,7 +248,7 @@ struct vmachine {
 
                 case opcode::SET_LOCAL: {
                     u32 index = current.a;
-                    value_stack.at(index) = value_stack.back();
+                    value_stack.at(index) = value_stack.pop_back();
                     break;
                 }
 
