@@ -34,7 +34,7 @@ public:
     }
 
     dynarray(dynarray&& other) {
-        steal_array(sting::steal(other));
+        steal_array(sting::stealable(other));
     }
 
     dynarray& operator=(const dynarray& other) {
@@ -49,7 +49,7 @@ public:
 
     dynarray& operator=(dynarray&& other) {
         if (this != &other) {
-            steal_array(sting::steal(other));
+            steal_array(sting::stealable(other));
         }
         return *this;
     }

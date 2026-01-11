@@ -73,12 +73,12 @@ struct remove_reference<T&&> {
     using type = T;
 };
 
-// identical to std::move, but steal sounds better
+// identical to std::move, but stealable sounds better
 // question: why do we need the remove_reference indirection?
 // is decltype auto because we don't know the return type
 // until we get to return?
 template <typename T>
-decltype(auto) steal(T&& value) {
+decltype(auto) stealable(T&& value) {
     return static_cast<typename remove_reference<T>::type&&>(value);
 }
 
