@@ -67,6 +67,7 @@ std::ostream& operator<<(std::ostream& os, const instruction& instr) {
 std::ostream& operator<<(std::ostream& os, const chunk& chk) {
     os << "---- CHUNK: " << chk.name << " ---- \n";
     for (u64 i{0}; i < chk.bytecode.size(); i++) {
+        os << std::setw(3) << std::setfill(' ') << i + 1 << ": ";
         const instruction& instr = chk.bytecode.at(i);
         os << instr << "\t";
         switch (instr.op) {
