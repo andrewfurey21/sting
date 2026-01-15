@@ -1,3 +1,6 @@
+#ifndef VALUE_HPP
+#define VALUE_HPP
+
 #include "utilities.hpp"
 #include "object.hpp"
 
@@ -7,7 +10,8 @@ enum class vtype {
     BOOLEAN,
     NIL,
     NUMBER,
-    STRING
+    STRING,
+    FUNCTION
 };
 
 class value {
@@ -47,3 +51,5 @@ private:
 
 
 } // namespace sting
+
+#endif

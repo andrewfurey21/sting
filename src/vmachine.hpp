@@ -6,76 +6,10 @@
 #include "dynarray.hpp"
 #include "value.hpp"
 #include "hashmap.hpp"
+#include "string.hpp"
+#include "chunk.hpp"
 
 namespace sting {
-
-enum class opcode {
-    RETURN,
-    LOAD_CONST,
-    NEGATE,
-    NOT,
-    ADD,
-    MULTIPLY,
-    DIVIDE,
-    SUBTRACT,
-    TRUE,
-    FALSE,
-    NIL,
-    GREATER,
-    LESS,
-    EQUAL,
-    PRINT,
-    POP,
-    POPN,
-    DEFINE_GLOBAL,
-    GET_GLOBAL,
-    SET_GLOBAL,
-    GET_LOCAL,
-    SET_LOCAL,
-    BRANCH_FALSE,
-    BRANCH,
-    LOOP, // just branch but backwards
-};
-
-std::string opcode_to_string(opcode op);
-
-struct instruction {
-    opcode op;
-    u32 a;
-
-    friend std::ostream& operator<<(std::ostream& os, const instruction& instr);
-};
-
-struct chunk {
-    chunk() : name("unnamed_chunk") {}
-    chunk(const std::string& name) : name(name) {}
-    std::string name;
-    dynarray<instruction> bytecode;
-    dynarray<value> constant_pool;
-    dynarray<u64> lines;
-
-    void write_instruction(const opcode op, u64 line, u32 a = 0) {
-        instruction instr = {
-            .op = op,
-            .a = a,
-        };
-
-        lines.push_back(line);
-        bytecode.push_back(instr);
-    }
-
-    u32 load_constant(const value& val) {
-        u32 index = constant_pool.size();
-        constant_pool.push_back(val);
-        return index;
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const chunk& chk);
-
-    ~chunk() {
-
-    }
-};
 
 enum class vm_result { // just result?
     OK,
@@ -208,7 +142,7 @@ struct vmachine {
                 case opcode::DEFINE_GLOBAL: {
                     u32 index = current.a;
                     const value& v = chk.constant_pool.at(index);
-                    const string* name = static_cast<string*>(v.obj());
+                    const string *name = static_cast<string*>(v.obj());
                     // this looks really bad but guaranteed to be a string.
                     panic_if(globals.contains(*name), "Already defined global");
                     globals.insert(*name, value_stack.back());
@@ -221,7 +155,7 @@ struct vmachine {
                     u32 index = current.a;
 
                     const value& v = chk.constant_pool.at(index);
-                    const string* name = static_cast<string*>(v.obj());
+                    const string *name = static_cast<string*>(v.obj());
 
                     panic_if(!globals.contains(*name), "Cannot get undefined variable");
 
@@ -232,7 +166,7 @@ struct vmachine {
                 case opcode::SET_GLOBAL: {
                     u32 index = current.a;
                     const value& v = chk.constant_pool.at(index);
-                    const string* name = static_cast<string*>(v.obj());
+                    const string *name = static_cast<string*>(v.obj());
                     panic_if(!globals.contains(*name), "Cannot set undefined variable");
 
                     globals.at(*name) = value_stack.back();
@@ -282,7 +216,7 @@ struct vmachine {
     }
 
     chunk chk;
-    instruction* pc;
+    instruction *pc;
     dynarray<value> value_stack;
     hashmap<string, value> globals;
 };

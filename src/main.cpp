@@ -1,4 +1,4 @@
-#include "../include/sting.hpp"
+#include "sting.hpp"
 
 i32 main() {
     const std::filesystem::path file("main.sting");

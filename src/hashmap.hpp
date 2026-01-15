@@ -2,7 +2,7 @@
 #define HASHMAP_HPP
 
 #include "utilities.hpp"
-#include "object.hpp"
+#include "string.hpp"
 
 namespace sting {
 

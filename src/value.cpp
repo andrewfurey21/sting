@@ -1,4 +1,5 @@
-#include "../include/value.hpp"
+#include "value.hpp"
+#include "string.hpp"
 
 namespace sting {
 

@@ -1,4 +1,5 @@
-#include "../include/interpreter.hpp"
+#include "interpreter.hpp"
+#include "parser.hpp"
 
 namespace sting {
 
@@ -17,20 +18,6 @@ vm_result interpret(const std::filesystem::path& file, bool debug) {
 
     const dynarray<token>& ts = p.get_tokens();
 
-    if (debug) {
-        // int line = 0;
-        // for (u64 i{}; i < ts.size(); i++) {
-        //     if (ts.at(i).type == token_type::END_OF_FILE) {
-        //         break;
-        //     } else if (line != ts.at(i).line) {
-        //         line = ts.at(i).line;
-        //         std::cout << "\n" << line << ": ";
-        //     }
-        //     printf("token(%.*s), ", (int)ts.at(i).length, ts.at(i).start);
-        // }
-        // std::cout << "\n";
-    }
-
     result = p.parse();
     if (!result) return vm_result::COMPILE_ERROR;
     vmachine vm(p.get_chunk());
@@ -46,7 +33,6 @@ void manage_result(vm_result result) {
     u8 code = -1;
     switch (result) {
         case sting::vm_result::OK: {
-            // std::cerr << "Success.\n";
             code = 0;
             break;
         }

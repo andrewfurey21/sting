@@ -1,4 +1,4 @@
-#include "../include/object.hpp"
+#include "string.hpp"
 
 namespace sting {
 
@@ -64,7 +64,7 @@ string& string::operator=(string&& other) {
 
 object* string::clone() const {
     object* str = new string(*this);
-    object_list.push_back(str);
+    object_list.push_back(str); // for basic garbage collection
     return str;
 }
 

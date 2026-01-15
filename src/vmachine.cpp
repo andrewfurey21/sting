@@ -1,4 +1,4 @@
-#include "../include/vmachine.hpp"
+#include "vmachine.hpp"
 
 namespace sting {
 

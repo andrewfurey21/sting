@@ -1,22 +1,23 @@
 
-a = 2005;
-b = 1;
-is_prime = True;
+i = 2;
+while (i <= 2003):
+    start = 2;
+    is_prime = True;
+    factor = 0;
 
-while (b < a - 1 and is_prime):
-    b = b + 1;
-    i = a;
-    while i > 0:
-        i = i - b;
+    while (start < i and is_prime):
+        result = i;
 
-    if i + 0.0001 > 0:
-        is_prime = False;
-    else:
-        print(b);
+        while (result > 0):
+            result = result - start;
 
-print(a);
-if is_prime:
-    print("is prime!");
-else:
-    print("is divisible by: ");
-    print(b)
+        if (result + 0.0001 > 0):
+            is_prime = False
+            factor = start
+
+        start = start + 1;
+
+    if (is_prime):
+        print(i)
+
+    i = i + 1;

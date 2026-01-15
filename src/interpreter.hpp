@@ -2,7 +2,6 @@
 #define INTERPRETER_HPP
 
 #include "vmachine.hpp"
-#include "parser.hpp"
 
 namespace sting {
 
