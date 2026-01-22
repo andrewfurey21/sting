@@ -18,7 +18,7 @@ value::value(u8 b) {
     this->b = b;
 }
 
-value::value(object* o, vtype t) {
+value::value(object const* o, vtype t) {
     type = t;
     this->o = o->clone();
 }

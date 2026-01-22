@@ -19,7 +19,7 @@ public:
     value();
     value(f32 f);
     value(u8 b);
-    value(object* o, vtype t);
+    value(object const* o, vtype t);
     ~value();
 
     value operator+(const value& other) const;

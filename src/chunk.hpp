@@ -77,6 +77,31 @@ struct chunk {
     ~chunk() {}
 };
 
+inline std::ostream& operator<<(std::ostream& os, const instruction& instr) {
+    os << opcode_to_string(instr.op) << ": " << instr.a;
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const chunk& chk) {
+    os << "---- CHUNK: " << chk.name << " ---- \n";
+    for (u64 i{0}; i < chk.bytecode.size(); i++) {
+        os << std::setw(3) << std::setfill(' ') << i + 1 << ": ";
+        const instruction& instr = chk.bytecode.at(i);
+        os << instr << "\t";
+        switch (instr.op) {
+            case opcode::LOAD_CONST: {
+                f32 data = chk.constant_pool.at(instr.a).number();
+                os << "Value(" << data << ")";
+                os << "\t";
+            }
+            default: {
+            }
+        }
+        os << "\tline: " << chk.lines.at(i) << "\n";
+    }
+    return os;
+}
+
 } // namespace sting
 
 #endif

@@ -141,10 +141,10 @@ void parser::fun_declaration() {
 
     const string& fname =
         *static_cast<string*>(get_current_function().get_chunk().constant_pool.at(fn_index).obj());
-    function f(fname, arity);
 
     consume(token_type::LEFT_BRACE, "Expected '{' after function declaration");
 
+    c.functions.push_back(function(fname, arity));
     block();
 
     consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
@@ -165,8 +165,10 @@ void parser::fun_declaration() {
     } else {
         // no need to pop when theres no locals.
     }
+
     // at end, store function in previous functions constant pool
-    const value fv(static_cast<object*>(&f), vtype::FUNCTION);
+    const function& f = c.functions.pop_back();
+    const value fv(static_cast<object const*>(&f), vtype::FUNCTION);
     get_current_function().load_constant(fv);
 }
 
