@@ -2,7 +2,6 @@
 #define HASHMAP_HPP
 
 #include "utilities.hpp"
-#include "string.hpp"
 
 namespace sting {
 
@@ -13,8 +12,6 @@ namespace sting {
  */
 
 const u64 DEFAULT_CAPACITY = 256;
-const u64 DEFAULT_FNV_PRIME = 0x00000100000001B3;
-const u64 DEFAULT_FNV_OFFSET = 0xCBF29CE484222325;
 const f64 DEFAULT_GROWTH_FACTOR = 2.0; // hashmap assumes > 1
 const f64 DEFAULT_MAX_LOAD = 0.75; // hashmap assumes between 0 and 1
 
@@ -27,8 +24,6 @@ public:
         _data(nullptr),
         _capacity(capacity),
         _size(0),
-        _fnv_prime(DEFAULT_FNV_PRIME),
-        _fnv_offset(DEFAULT_FNV_OFFSET),
         _growth_factor(DEFAULT_GROWTH_FACTOR),
         _max_load(DEFAULT_MAX_LOAD)
     {
@@ -49,8 +44,6 @@ public:
         _data = exchange(other._data, _allocate(1));
         _capacity = exchange(other._capacity, 1);
         _size = exchange(other._size, 0);
-        _fnv_prime = other._fnv_prime;
-        _fnv_offset = other._fnv_offset;
         _growth_factor = other._growth_factor;
         _max_load = other._max_load;
     }
@@ -59,8 +52,6 @@ public:
         if (this != &other) {
             _capacity = other._capacity;
             _size = other._size;
-            _fnv_prime = other._fnv_prime;
-            _fnv_offset = other._fnv_offset;
             _growth_factor = other._growth_factor;
             _max_load = other._max_load;
 
@@ -76,8 +67,6 @@ public:
             _data = exchange(other._data, _allocate(1));
             _capacity = exchange(other._capacity, 1);
             _size = exchange(other._size, 0);
-            _fnv_prime = other._fnv_prime;
-            _fnv_offset = other._fnv_offset;
             _growth_factor = other._growth_factor;
             _max_load = other._max_load;
         }
@@ -192,24 +181,7 @@ private:
 
     // produces some offset into _data, using FNV-1a
     u64 _hash_key(const Key& key, const u64 capacity) const {
-        u64 hash = _fnv_offset;
-        u8* key_addr;
-        u64 key_size;
-
-        // todo: need a proper generic hash
-        if constexpr (std::is_same_v<Key, string>) {
-            key_addr = key.data();
-            key_size = key.size();
-        } else {
-            key_addr = reinterpret_cast<u8*>(&key);
-            key_size = sizeof(Key);
-        }
-
-        for (u64 i{}; i < key_size; ++i) {
-            hash ^= key_addr[i];
-            hash *= _fnv_prime;
-        }
-        return hash % capacity;
+        return fnv_1a_hash(key) % capacity;
     }
 
     void _grow_capacity() {
@@ -267,8 +239,6 @@ private:
     _slot* _data;
     u64 _capacity;
     u64 _size;
-    u64 _fnv_prime;
-    u64 _fnv_offset;
     f64 _growth_factor;
     f64 _max_load;
 };
