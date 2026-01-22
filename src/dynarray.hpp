@@ -72,8 +72,8 @@ public:
             _capacity *= 2;
             resize_array();
         }
+        new (_data + _size) T(x);
         _size++;
-        this->at(_size - 1) = x;
     }
 
     T pop_back() {
