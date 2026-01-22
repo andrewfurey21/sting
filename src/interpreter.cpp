@@ -20,10 +20,10 @@ vm_result interpret(const std::filesystem::path& file, bool debug) {
 
     result = p.parse();
     if (!result) return vm_result::COMPILE_ERROR;
-    vmachine vm(p.get_chunk());
+    vmachine vm(p.get_script());
 
     if (debug) {
-        std::cout << vm.chk << "\n";
+        std::cout << vm.script() << "\n";
     }
 
     return vm.run_chunk();

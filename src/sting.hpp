@@ -8,5 +8,7 @@
 #include "interpreter.hpp"
 #include "object.hpp"
 #include "hashmap.hpp"
+#include "function.hpp"
+#include "hash.hpp"
 
 #endif

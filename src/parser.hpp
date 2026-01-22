@@ -7,6 +7,7 @@
 #include "vmachine.hpp"
 #include "object.hpp"
 #include "hashmap.hpp"
+#include "function.hpp"
 
 /*
  *  Parsing + codegen
@@ -30,7 +31,7 @@ enum precedence {
 
 struct local {
     token name;
-    i64 depth;
+    i64 depth; // can have locals with same name, but different depths.
 
     bool operator==(const local& other) const {
         return name == other.name && depth == other.depth;
@@ -38,13 +39,24 @@ struct local {
 };
 
 struct compiler {
-    compiler() : scope_depth(0), locals() {}
+    compiler() : functions(), scope_depth(0), locals() {
+        functions.push_back(function("script", 0));
+    }
+    dynarray<function> functions;
     i64 scope_depth;
     dynarray<local> locals; // kind of like simulating stack but at compile time
-    // get get correct location of local on the stack.
-
+    // get correct location of local on the stack.
+    // all locals in the current scope get popped off when going out of scope.
     // back through the stack and find first one with same token.
+
+    // run at end of function compilation
+    void finish_current_function() {
+        // store function object in functions.at(size - 2).chk.constant pool
+        // functions.pop_back()
+    }
+
     i64 resolve_local(const token& t) {
+        std::cout << scope_depth << "\n";
         for (i64 i{static_cast<i64>(locals.size()) - 1l}; i >= 0; i--) {
             if (locals.at(i).name == t) {
                 panic_if(locals.at(i).depth == -1, "Cannot define local with itself.");
@@ -52,6 +64,10 @@ struct compiler {
             }
         }
         return -1;
+    }
+
+    ~compiler() {
+        // std::cout << "functions size: " << functions.size() << "\n" << std::flush;
     }
 };
 
@@ -61,7 +77,7 @@ public:
     parser(const std::string& name);
     bool parse();
     dynarray<token>& get_tokens() { return tokens; }
-    chunk& get_chunk() { return chk; }
+    function& get_script() { return c.functions.at(0); }
     void error_at_token(const token& t, const std::string& msg);
     void check_current_token(const token_type expected, const std::string& mesg);
     void get_next_token();
@@ -70,10 +86,13 @@ public:
     bool match(token_type type);
     u64 emit_jump(opcode branch_type);
     void backpatch(u64 branch);
+    function& get_current_function() { return c.functions.back(); }
 
     // parse functions that generate code
     void declaration();
     void var_declaration();
+    void fun_declaration();
+    void fun_param_declaration();
     void declare_local_variable();
     void variable(bool assignable);
     u64 parse_global_variable_name();
@@ -95,14 +114,16 @@ public:
     void binary_or(bool assignable);
     void print();
 
-    token* prev;
-    token* current;
+    // token related
+    token *prev;
+    token *current;
     u64 index;
     dynarray<token> tokens;
-    chunk chk;
-    compiler c;
     bool parse_error;
     bool panic;
+
+    // most important part
+    compiler c;
 };
 
 using parse_fn = void (parser::*)(bool assignable);
@@ -113,7 +134,7 @@ struct parse_rule {
     precedence prec;
 };
 
-parse_rule* get_rule(token_type type);
+parse_rule *get_rule(token_type type);
 
 } // namespace sting
 

@@ -1,6 +1,7 @@
 #ifndef CHUNK_HPP
 #define CHUNK_HPP
 
+// #include "function.hpp"
 #include "utilities.hpp"
 #include "dynarray.hpp"
 #include "value.hpp"
@@ -33,11 +34,10 @@ enum class opcode {
     BRANCH_FALSE,
     BRANCH,
     LOOP, // just branch but backwards
+    CALL,
 };
 
 std::string opcode_to_string(opcode op);
-
-
 
 struct instruction {
     opcode op;
@@ -52,6 +52,7 @@ struct chunk {
     chunk(const std::string& name) : name(name) {}
     std::string name;
     dynarray<instruction> bytecode;
+    // globals (functions, strs, global names)
     dynarray<value> constant_pool;
     dynarray<u64> lines;
 
@@ -73,9 +74,7 @@ struct chunk {
 
     friend std::ostream& operator<<(std::ostream& os, const chunk& chk);
 
-    ~chunk() {
-
-    }
+    ~chunk() {}
 };
 
 } // namespace sting

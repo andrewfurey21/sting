@@ -10,7 +10,7 @@ class object {
 public:
     // we can copy derived from base pointer
     virtual object *clone() const = 0;
-    virtual u8 *cstr() = 0;
+    virtual u8 *cstr() const = 0;
     virtual ~object() = default;
 };
 

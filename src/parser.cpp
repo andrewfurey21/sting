@@ -1,13 +1,14 @@
 #include "parser.hpp"
+#include "utilities.hpp"
 
 namespace sting {
 
 parser::parser() : parser("unknown_chunk") {}
 
 parser::parser(const std::string& name) :
-        chk(name),
-        index{},
-        panic{}, parse_error{}
+    index{},
+    panic{},
+    parse_error{}
 {
     prev = 0;
     current = 0;
@@ -28,7 +29,7 @@ bool parser::parse() {
     consume(token_type::END_OF_FILE, "Expected end of file");
     if (panic) return !parse_error;
 
-    chk.write_instruction(opcode::RETURN, current->line);
+    get_current_function().write_instruction(opcode::RETURN, current->line);
     return true;
 }
 
@@ -88,9 +89,34 @@ void parser::parse_precedence(precedence p) {
 void parser::declaration() {
     if (current->type == token_type::VAR) {
         var_declaration();
+    // } else if (current->type == token_type::FUN) {
+    //     fun_declaration();
     } else {
         statement();
     }
+}
+
+void parser::fun_param_declaration() {
+
+}
+
+void parser::fun_declaration() {
+    get_next_token();
+    consume(token_type::IDENTIFIER, "Expected function name");
+    u64 fn_index;
+
+    if (c.scope_depth == 0) {
+        fn_index = parse_global_variable_name();
+    } else {
+        sting::panic("NOT IMPLEMENTED");
+    }
+
+    consume(token_type::LEFT_PAREN, "Expected '(' after function name");
+    while (current->type != token_type::RIGHT_PAREN) {
+        fun_param_declaration();
+        get_next_token();
+    }
+    consume(token_type::RIGHT_PAREN, "Expected ')' after function definition");
 }
 
 // add local variable to list of variables in given scope.
@@ -116,7 +142,7 @@ void parser::declare_local_variable() {
 u64 parser::parse_global_variable_name() {
     string name(prev->start, prev->length);
     value v(&name, vtype::STRING);
-    return chk.load_constant(v);
+    return get_current_function().load_constant(v);
 }
 
 void parser::var_declaration() {
@@ -137,11 +163,11 @@ void parser::var_declaration() {
         if (c.locals.size() >= 1)
             c.locals.back().depth = c.scope_depth;
     } else {
-        chk.write_instruction(opcode::NIL, current->line);
+        get_current_function().write_instruction(opcode::NIL, current->line);
     }
 
     if (c.scope_depth == 0) {
-        chk.write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
+        get_current_function().write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
     }
     consume(token_type::SEMICOLON, "Expected ';' after variable declaration");
 }
@@ -151,7 +177,6 @@ void parser::variable(bool assignable) {
 }
 
 void parser::named_variable(const token& tok_name, bool assignable) {
-
     if (current->type == token_type::EQUAL) {
         panic_if(!assignable, "Cannot assign to this expression");
 
@@ -160,20 +185,20 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             u64 index = parse_global_variable_name();
             get_next_token();
             expression();
-            chk.write_instruction(opcode::SET_GLOBAL, prev->line, index);
+            get_current_function().write_instruction(opcode::SET_GLOBAL, prev->line, index);
         } else {
             get_next_token();
             expression();
-            chk.write_instruction(opcode::SET_LOCAL, prev->line, local);
+            get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
         }
     } else {
 
         i64 local = c.resolve_local(*prev);
         if (local == -1) {
             u64 index = parse_global_variable_name();
-            chk.write_instruction(opcode::GET_GLOBAL, prev->line, index);
+            get_current_function().write_instruction(opcode::GET_GLOBAL, prev->line, index);
         } else {
-            chk.write_instruction(opcode::GET_LOCAL, prev->line, local);
+            get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
         }
     }
 }
@@ -196,8 +221,11 @@ void parser::statement() {
             count++;
             c.locals.pop_back();
         }
-        if (count != 0)
-            chk.write_instruction(opcode::POPN, prev->line, count);
+        if (count == 1)
+            get_current_function().write_instruction(opcode::POP, prev->line);
+        else if (count > 1)
+            get_current_function().write_instruction(opcode::POPN, prev->line, count);
+
         c.scope_depth--;
     } else {
         expression_statement();
@@ -205,30 +233,30 @@ void parser::statement() {
 }
 
 u64 parser::emit_jump(opcode branch_type) {
-    chk.write_instruction(branch_type, prev->line, 0);
-    return chk.bytecode.size();
+    get_current_function().write_instruction(branch_type, prev->line, 0);
+    return get_current_function().get_chunk().bytecode.size();
 }
 
 void parser::backpatch(u64 branch) {
-    u64 current_size = chk.bytecode.size();
-    chk.bytecode.at(branch - 1).a = current_size - branch;
+    u64 current_size = get_current_function().get_chunk().bytecode.size();
+    get_current_function().get_chunk().bytecode.at(branch - 1).a = current_size - branch;
 }
 
 void parser::while_statement() {
     get_next_token();
     consume(token_type::LEFT_PAREN, "Expected '(' after while");
-    u64 start = chk.bytecode.size();
+    u64 start = get_current_function().get_chunk().bytecode.size();
     expression();
     consume(token_type::RIGHT_PAREN, "Expected ')' after expression");
 
     u64 jump_if_false = emit_jump(opcode::BRANCH_FALSE);
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
 
     statement();
-    u64 end = chk.bytecode.size();
-    chk.write_instruction(opcode::LOOP, prev->line, end - start + 1);
+    u64 end = get_current_function().get_chunk().bytecode.size();
+    get_current_function().write_instruction(opcode::LOOP, prev->line, end - start + 1);
     backpatch(jump_if_false);
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
 }
 
 void parser::for_statement() {
@@ -240,29 +268,29 @@ void parser::for_statement() {
     // must have a var declaration.
     var_declaration(); // var i = 0; a
 
-    u64 start = chk.bytecode.size(); // check
+    u64 start = get_current_function().get_chunk().bytecode.size(); // check
     expression(); // i < size; b
     consume(token_type::SEMICOLON, "Expected ';' after expression");
 
     u64 end_for_loop = emit_jump(opcode::BRANCH_FALSE);
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
 
     u64 to_statement = emit_jump(opcode::BRANCH);
-    u64 to_inc = chk.bytecode.size();
+    u64 to_inc = get_current_function().get_chunk().bytecode.size();
     expression(); // i++
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
     consume(token_type::RIGHT_PAREN, "Expected ')' after for loop statement");
 
-    chk.write_instruction(opcode::LOOP, prev->line, chk.bytecode.size() - start + 1);
+    get_current_function().write_instruction(opcode::LOOP, prev->line, get_current_function().get_chunk().bytecode.size() - start + 1);
 
     backpatch(to_statement);
     statement();
 
-    chk.write_instruction(opcode::LOOP, prev->line, chk.bytecode.size() - to_inc + 1);
+    get_current_function().write_instruction(opcode::LOOP, prev->line, get_current_function().get_chunk().bytecode.size() - to_inc + 1);
 
     // end_for_loop
     backpatch(end_for_loop);
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
     c.scope_depth -= 1;
 }
 
@@ -284,7 +312,7 @@ void parser::if_statement() {
     } else {
         backpatch(if_statement);
     }
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
 }
 
 void parser::block() {
@@ -299,7 +327,7 @@ void parser::block() {
 void parser::expression_statement() {
     expression();
     consume(token_type::SEMICOLON, "Expected ;");
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
 }
 
 void parser::expression() {
@@ -309,22 +337,22 @@ void parser::expression() {
 // gets the number, emits LOAD_CONST and pushes number onto value stack
 void parser::number(bool assignable) {
     const value val = std::stof(std::string(prev->start, prev->length));
-    u32 index = chk.load_constant(val);
-    chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
+    u32 index = get_current_function().load_constant(val);
+    get_current_function().write_instruction(opcode::LOAD_CONST, prev->line, index);
 }
 
 void parser::literal(bool assignable) {
     switch(prev->type) {
         case token_type::TRUE: {
-            chk.write_instruction(opcode::TRUE, 0);
+            get_current_function().write_instruction(opcode::TRUE, 0);
             break;
         }
         case token_type::FALSE: {
-            chk.write_instruction(opcode::FALSE, 0);
+            get_current_function().write_instruction(opcode::FALSE, 0);
             break;
         }
         case token_type::NIL: {
-            chk.write_instruction(opcode::NIL, 0);
+            get_current_function().write_instruction(opcode::NIL, 0);
             break;
         }
         default:
@@ -336,8 +364,8 @@ void parser::str(bool assignable) {
     object* str = new string(prev->start, prev->length);
     object_list.push_back(str);
     value val = value(str, vtype::STRING);
-    u32 index = chk.load_constant(val);
-    chk.write_instruction(opcode::LOAD_CONST, prev->line, index);
+    u32 index = get_current_function().load_constant(val);
+    get_current_function().write_instruction(opcode::LOAD_CONST, prev->line, index);
 }
 
 void parser::grouping(bool assignable) {
@@ -352,11 +380,11 @@ void parser::unary(bool assignable) {
 
     switch(op_type) {
         case token_type::MINUS: {
-            chk.write_instruction(opcode::NEGATE, prev->line);
+            get_current_function().write_instruction(opcode::NEGATE, prev->line);
             break;
         }
         case token_type::BANG: {
-            chk.write_instruction(opcode::NOT, prev->line);
+            get_current_function().write_instruction(opcode::NOT, prev->line);
             break;
         }
         default:
@@ -374,46 +402,46 @@ void parser::binary(bool assignable) {
 
     switch (type) {
         case token_type::PLUS: {
-            chk.write_instruction(opcode::ADD, prev->line);
+            get_current_function().write_instruction(opcode::ADD, prev->line);
             break;
         }
         case token_type::MINUS: {
-            chk.write_instruction(opcode::SUBTRACT, prev->line);
+            get_current_function().write_instruction(opcode::SUBTRACT, prev->line);
             break;
         }
         case token_type::SLASH: {
-            chk.write_instruction(opcode::DIVIDE, prev->line);
+            get_current_function().write_instruction(opcode::DIVIDE, prev->line);
             break;
         }
         case token_type::STAR: {
-            chk.write_instruction(opcode::MULTIPLY, prev->line);
+            get_current_function().write_instruction(opcode::MULTIPLY, prev->line);
             break;
         }
         case token_type::EQUAL_EQUAL: {
-            chk.write_instruction(opcode::EQUAL, prev->line);
+            get_current_function().write_instruction(opcode::EQUAL, prev->line);
             break;
         }
         case token_type::BANG_EQUAL: {
-            chk.write_instruction(opcode::EQUAL, prev->line);
-            chk.write_instruction(opcode::NOT, prev->line);
+            get_current_function().write_instruction(opcode::EQUAL, prev->line);
+            get_current_function().write_instruction(opcode::NOT, prev->line);
             break;
         }
         case token_type::GREATER: {
-            chk.write_instruction(opcode::GREATER, prev->line);
+            get_current_function().write_instruction(opcode::GREATER, prev->line);
             break;
         }
         case token_type::GREATER_EQUAL: {
-            chk.write_instruction(opcode::LESS, prev->line);
-            chk.write_instruction(opcode::NOT, prev->line);
+            get_current_function().write_instruction(opcode::LESS, prev->line);
+            get_current_function().write_instruction(opcode::NOT, prev->line);
             break;
         }
         case token_type::LESS: {
-            chk.write_instruction(opcode::LESS, prev->line);
+            get_current_function().write_instruction(opcode::LESS, prev->line);
             break;
         }
         case token_type::LESS_EQUAL: {
-            chk.write_instruction(opcode::GREATER, prev->line);
-            chk.write_instruction(opcode::NOT, prev->line);
+            get_current_function().write_instruction(opcode::GREATER, prev->line);
+            get_current_function().write_instruction(opcode::NOT, prev->line);
             break;
         }
         default:
@@ -423,7 +451,7 @@ void parser::binary(bool assignable) {
 
 void parser::binary_and(bool assignable) {
     u64 _and = emit_jump(opcode::BRANCH_FALSE);
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
     parse_precedence(precedence::AND);
     backpatch(_and);
 }
@@ -432,7 +460,7 @@ void parser::binary_or(bool assignable) { // could just have  a BRANCH_TRUE.
     u64 first_not = emit_jump(opcode::BRANCH_FALSE);
     u64 first_true = emit_jump(opcode::BRANCH);
     backpatch(first_not);
-    chk.write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POP, prev->line);
     parse_precedence(precedence::OR);
     backpatch(first_true);
 }
@@ -441,7 +469,7 @@ void parser::print() {
     get_next_token();
     expression();
     consume(token_type::SEMICOLON, "Expected ;");
-    chk.write_instruction(opcode::PRINT, prev->line);
+    get_current_function().write_instruction(opcode::PRINT, prev->line);
 }
 
     // NONE       0

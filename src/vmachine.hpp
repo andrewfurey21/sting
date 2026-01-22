@@ -8,6 +8,7 @@
 #include "hashmap.hpp"
 #include "string.hpp"
 #include "chunk.hpp"
+#include "function.hpp"
 
 namespace sting {
 
@@ -17,15 +18,26 @@ enum class vm_result { // just result?
     RUNTIME_ERROR
 };
 
+struct call_frame {
+    function f; // function bytecode should be static during runtime.
+    u64 pc;
+    u64 bp; // base pointer of function call on value_stack
+
+    call_frame(const function& func, u64 bp = 0) : f(func), bp(bp), pc(0) {}
+    call_frame(const call_frame& other) : f(other.f), bp(other.bp), pc(other.pc) {}
+};
+
 struct vmachine {
-    vmachine(const chunk& chk) : chk(chk) {
-        pc = this->chk.bytecode.data();
+    vmachine(const function& f) {
+        call_frame cf = call_frame(f);
+        call_frames.push_back(cf);
     }
 
     vm_result run_chunk() {
         for (;;) {
-            const instruction& current = *pc;
-            pc++;
+            pc = &call_frames.back().pc;
+            const instruction& current = call_frames.back().f.get_chunk().bytecode.at(*pc);
+            call_frames.back().pc++;
 
             switch(current.op) {
                 case opcode::RETURN: {
@@ -34,7 +46,7 @@ struct vmachine {
 
                 case opcode::LOAD_CONST: {
                     u64 index = current.a;
-                    const value& val = chk.constant_pool.at(index);
+                    const value& val = get_current_chunk().constant_pool.at(index);
                     value_stack.push_back(val);
                     break;
                 }
@@ -141,20 +153,18 @@ struct vmachine {
 
                 case opcode::DEFINE_GLOBAL: {
                     u32 index = current.a;
-                    const value& v = chk.constant_pool.at(index);
+                    const value& v = get_current_chunk().constant_pool.at(index);
                     const string *name = static_cast<string*>(v.obj());
                     // this looks really bad but guaranteed to be a string.
                     panic_if(globals.contains(*name), "Already defined global");
-                    globals.insert(*name, value_stack.back());
-                    value_stack.pop_back();
-
+                    globals.insert(*name, value_stack.pop_back());
                     break;
                 }
 
                 case opcode::GET_GLOBAL: {
                     u32 index = current.a;
 
-                    const value& v = chk.constant_pool.at(index);
+                    const value& v = get_current_chunk().constant_pool.at(index);
                     const string *name = static_cast<string*>(v.obj());
 
                     panic_if(!globals.contains(*name), "Cannot get undefined variable");
@@ -165,8 +175,8 @@ struct vmachine {
 
                 case opcode::SET_GLOBAL: {
                     u32 index = current.a;
-                    const value& v = chk.constant_pool.at(index);
-                    const string *name = static_cast<string*>(v.obj());
+                    const value& v = get_current_chunk().constant_pool.at(index);
+                    const string *name =static_cast<string*>(v.obj());
                     panic_if(!globals.contains(*name), "Cannot set undefined variable");
 
                     globals.at(*name) = value_stack.back();
@@ -189,36 +199,52 @@ struct vmachine {
                 case opcode::BRANCH_FALSE: {
                     u32 increment = current.a;
                     if (!value_stack.back().byte()) {
-                        pc += increment;
+                        *pc += increment;
                     }
                     break;
                 }
 
                 case opcode::BRANCH: {
                     u32 increment = current.a;
-                    pc += increment;
+                    *pc += increment;
                     break;
                 }
 
                 case opcode::LOOP: {
                     u32 increment = current.a;
-                    pc -= increment;
+                    *pc -= increment;
                     break;
+                }
+
+                case opcode::CALL: {
+                    /*
+                    a = index of function in current chunk constant pool
+                    add a new call frame with the function (possibly from global or local)
+                    set pc to start of function.chunk.bytecode
+                    */
+                    panic("Unimplemented CALL op");
                 }
 
                 default: {
                     std::stringstream errMessage;
-                    errMessage << "Unknown opcode: " << static_cast<i32>(current.op);
+                    errMessage << "Unknown opcode: " << static_cast<u64>(current.op);
                     panic(errMessage.str());
                 }
             }
         }
     }
 
-    chunk chk;
-    instruction *pc;
+    chunk& get_current_chunk() { return call_frames.back().f.get_chunk(); }
+
+    const chunk& script() {
+        return call_frames.at(0).f.get_chunk();
+    }
+
+    // chunk chk;
+    dynarray<call_frame> call_frames;
     dynarray<value> value_stack;
     hashmap<string, value> globals;
+    u64* pc;
 };
 
 } // namespace sting
