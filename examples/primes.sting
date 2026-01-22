@@ -1,7 +1,6 @@
-
-
 var i = 2;
-while (i <= 2003) {
+var max = 100;
+while (i <= max) {
     var start = 2;
     var is_prime = true;
     var factor = 0;
@@ -20,12 +19,8 @@ while (i <= 2003) {
 	start = start + 1;
     }
 
-    print i;
     if (is_prime) {
-        print " is prime!";
-    } else {
-        print " is divisible by: ";
-        print factor;
+        print i;
     }
 
     i = i + 1;

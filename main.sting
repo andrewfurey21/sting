@@ -1,9 +1,10 @@
+
 var i = 2;
-var max = 10;
-while (i <= 10) {
+var max = 100;
+while (i <= max) {
     var start = 2;
     var is_prime = true;
-    var factor = nil;
+    var factor = 0;
 
     while (start < i and is_prime) {
     	var result = i;
