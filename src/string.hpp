@@ -2,6 +2,7 @@
 #define STRING_HPP
 
 #include "object.hpp"
+#include "hash.hpp"
 
 namespace sting {
 
@@ -18,7 +19,7 @@ public:
     ~string();
 
     object *clone() const override;
-    u8 *cstr() override;
+    u8* cstr() const override;
 
     u8 at (u64 index) const;
     bool compare(const string& other) const;
@@ -33,11 +34,10 @@ public:
 
 private:
     void allocate_size();
-    void copy(u8 *dest, const u8 *src, const u64 size);
+    void copy(u8* dest, const u8* src, const u64 size) const;
     u8 *_data;
     u64 _size;
 };
-
 
 
 } // namespace sting

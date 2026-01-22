@@ -4,10 +4,10 @@ namespace sting {
 
 void string::allocate_size() {
     free(_data);
-    _data = reinterpret_cast<u8*>(malloc(_size * sizeof(u8)));
+    _data = static_cast<u8*>(malloc(_size * sizeof(u8)));
 }
 
-void string::copy(u8* dest, const u8* src, const u64 size) {
+void string::copy(u8* dest, const u8* src, const u64 size) const {
     for (u64 i{}; i < size; i++)
         dest[i] = src[i];
 }
@@ -32,11 +32,12 @@ string::string(const u8* other, u64 size) : string(size) {
 
 string::~string() {
     free(_data);
+    _data = nullptr;
 }
 
 string::string(const string& other) : _size(other._size), _data(nullptr) {
     allocate_size();
-    copy(_data, other._data, other.size());
+    copy(_data, other._data, _size);
 }
 
 string::string(string&& other) {
@@ -63,12 +64,12 @@ string& string::operator=(string&& other) {
 }
 
 object* string::clone() const {
-    object* str = new string(*this);
+    object *str = new string(*this);
     object_list.push_back(str); // for basic garbage collection
     return str;
 }
 
-u8* string::cstr() {
+u8* string::cstr() const {
     u8* ret = reinterpret_cast<char*>(calloc(_size + 1, sizeof(u8)));
     copy(ret, _data, _size);
     return ret;
@@ -118,6 +119,16 @@ std::ostream& operator<<(std::ostream& os, const string& str) {
         os << str.at(i);
     }
     return os;
+}
+
+template <>
+u64 fnv_1a_hash(const string& key) {
+    u64 hash = DEFAULT_FNV_OFFSET;
+    for (u64 i{}; i < key.size(); i++) {
+        hash ^= key.at(i);
+        hash *= DEFAULT_FNV_PRIME;
+    }
+    return hash;
 }
 
 };
