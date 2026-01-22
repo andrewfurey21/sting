@@ -35,8 +35,8 @@ struct vmachine {
 
     vm_result run_chunk() {
         for (;;) {
-            pc = &call_frames.back().pc;
-            const instruction& current = call_frames.back().f.get_chunk().bytecode.at(*pc);
+            u64 *const pc = &call_frames.back().pc;
+            instruction const& current = call_frames.back().f.get_chunk().bytecode.at(*pc);
             call_frames.back().pc++;
 
             switch(current.op) {
@@ -244,7 +244,6 @@ struct vmachine {
     dynarray<call_frame> call_frames;
     dynarray<value> value_stack;
     hashmap<string, value> globals;
-    u64* pc;
 };
 
 } // namespace sting

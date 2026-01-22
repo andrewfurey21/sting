@@ -80,7 +80,7 @@ u8 string::at(u64 index) const {
     return _data[index];
 }
 
-string string::operator+(const string& other) {
+string string::operator+(const string& other) const {
     string concat(_size + other.size());
     copy(concat._data, _data, _size);
     copy(concat._data + _size, other.data(), other.size());

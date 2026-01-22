@@ -39,10 +39,10 @@ value value::operator+(const value& other) const {
     if (this->type == vtype::NUMBER) {
         return value(static_cast<f32>(this->number() + other.number()));
     } else if (this->type == vtype::STRING) {
-        string b = *static_cast<string*>(this->obj());
-        string a = *static_cast<string*>(other.obj());
-        const string c = a + b; // TODO: remove copy
-        return value(c.clone(), vtype::STRING);
+        const string b = *static_cast<string*>(this->obj());
+        const string a = *static_cast<string*>(other.obj());
+        string c = a + b; // TODO: remove copy
+        return value(static_cast<object*>(&c), vtype::STRING);
     } else {
         panic("Type error: unknown type.");
     }

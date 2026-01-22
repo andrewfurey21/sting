@@ -69,6 +69,8 @@ void parser::parse_precedence(precedence p) {
     parse_fn prefix_rule = get_rule(prev->type)->prefix;
 
     if (prefix_rule == nullptr) {
+        string tok(prev->start, prev->length);
+        std::cout << "Error at " << tok << "\n" << std::flush;
         error_at_token(*prev, "Expected expression");
         return;
     }
@@ -89,34 +91,83 @@ void parser::parse_precedence(precedence p) {
 void parser::declaration() {
     if (current->type == token_type::VAR) {
         var_declaration();
-    // } else if (current->type == token_type::FUN) {
-    //     fun_declaration();
+    } else if (current->type == token_type::FUN) {
+        fun_declaration();
     } else {
         statement();
     }
 }
 
-void parser::fun_param_declaration() {
+void parser::declare_function_param() {
+    // its not like a scope though. you can't access locals outside the function call.
+    panic_if(c.scope_depth == 0, "Parameters are declared in a local scope");
 
+    local l = {
+        .name = *prev,
+        .depth = c.scope_depth,
+    };
+
+    // check if parameter name already exists
+    for (u64 i = c.locals.size(); i > 0; i--) {
+        const local& current_local = c.locals.at(i - 1);
+        if (c.scope_depth > current_local.depth) break;
+        panic_if(current_local.name == l.name, "Cannot have parameters with the same name.");
+    }
+
+    c.locals.push_back(l);
 }
 
 void parser::fun_declaration() {
+    panic_if(c.scope_depth != 0, "CLOSURES NOT IMPLEMENTED");
+
     get_next_token();
     consume(token_type::IDENTIFIER, "Expected function name");
-    u64 fn_index;
 
-    if (c.scope_depth == 0) {
-        fn_index = parse_global_variable_name();
-    } else {
-        sting::panic("NOT IMPLEMENTED");
-    }
-
+    // store function name in script constant pool
+    u64 fn_index = parse_global_variable_name();
+    c.scope_depth++;
+    u64 arity = 0; // for error checking.
     consume(token_type::LEFT_PAREN, "Expected '(' after function name");
-    while (current->type != token_type::RIGHT_PAREN) {
-        fun_param_declaration();
-        get_next_token();
+    while (current->type == token_type::IDENTIFIER) {
+        arity++;
+        get_next_token(); // param token in prev.
+        declare_function_param();
+        if (current->type == token_type::RIGHT_PAREN)
+            break;
+
+        consume(token_type::COMMA, "Expected ',' after parameter definition");
     }
     consume(token_type::RIGHT_PAREN, "Expected ')' after function definition");
+
+    const string& fname =
+        *static_cast<string*>(get_current_function().get_chunk().constant_pool.at(fn_index).obj());
+    function f(fname, arity);
+
+    consume(token_type::LEFT_BRACE, "Expected '{' after function declaration");
+
+    block();
+
+    consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
+    c.scope_depth--;
+
+    // parameters are included in the local count.
+    u64 num_locals = 0;
+    while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
+        num_locals++;
+        c.locals.pop_back();
+    }
+
+    // like cdecl, caller cleans up stack.
+    if (num_locals == 1) {
+        get_current_function().write_instruction(opcode::POP, prev->line);
+    } else if (num_locals > 1) {
+        get_current_function().write_instruction(opcode::POPN, prev->line, num_locals);
+    } else {
+        // no need to pop when theres no locals.
+    }
+    // at end, store function in previous functions constant pool
+    const value fv(static_cast<object*>(&f), vtype::FUNCTION);
+    get_current_function().load_constant(fv);
 }
 
 // add local variable to list of variables in given scope.
@@ -192,7 +243,6 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
         }
     } else {
-
         i64 local = c.resolve_local(*prev);
         if (local == -1) {
             u64 index = parse_global_variable_name();
@@ -214,7 +264,9 @@ void parser::statement() {
         for_statement();
     } else if (current->type == token_type::LEFT_BRACE) {
         c.scope_depth++;
+        consume(token_type::LEFT_BRACE, "Expected '{' after block");
         block();
+        consume(token_type::RIGHT_BRACE, "Expected '}' after block");
 
         u32 count = 0;
         while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
@@ -316,12 +368,10 @@ void parser::if_statement() {
 }
 
 void parser::block() {
-    get_next_token();
+    // get_next_token();
     while (current->type != token_type::RIGHT_BRACE && current->type != token_type::END_OF_FILE) {
         declaration();
     }
-
-    consume(token_type::RIGHT_BRACE, "Expected '}' after block");
 }
 
 void parser::expression_statement() {

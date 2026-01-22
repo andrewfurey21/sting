@@ -56,7 +56,6 @@ struct compiler {
     }
 
     i64 resolve_local(const token& t) {
-        std::cout << scope_depth << "\n";
         for (i64 i{static_cast<i64>(locals.size()) - 1l}; i >= 0; i--) {
             if (locals.at(i).name == t) {
                 panic_if(locals.at(i).depth == -1, "Cannot define local with itself.");
@@ -92,7 +91,7 @@ public:
     void declaration();
     void var_declaration();
     void fun_declaration();
-    void fun_param_declaration();
+    void declare_function_param();
     void declare_local_variable();
     void variable(bool assignable);
     u64 parse_global_variable_name();

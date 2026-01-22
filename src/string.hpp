@@ -23,7 +23,7 @@ public:
 
     u8 at (u64 index) const;
     bool compare(const string& other) const;
-    string operator+(const string& other);
+    string operator+(const string& other) const;
     void operator+=(const string& other);
     bool operator==(const string& other);
     bool operator!=(const string& other);
