@@ -146,7 +146,8 @@ std::ostream& operator<<(std::ostream& os, const value& v) {
             os << v.f;
             break;
         }
-        case vtype::STRING: {
+        case vtype::STRING:
+        case vtype::FUNCTION: {
             u8* s = v.o->cstr();
             os << s;
             free(s);

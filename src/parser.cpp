@@ -249,17 +249,17 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         // only checking globals, because closures not implemented yet.
         u64 index = parse_global_variable_name();
         u64 fnline = current->line;
+        get_next_token();
         while (true) {
-            get_next_token();
             if (current->type == token_type::RIGHT_PAREN) {
                 break;
-            } else {
-                expression();
-                if (current->type == token_type::RIGHT_PAREN) {
-                    break;
-                }
-                consume(token_type::COMMA, "Expected comma after function parameter expression");
             }
+
+            expression();
+            if (current->type == token_type::RIGHT_PAREN) {
+                break;
+            }
+            consume(token_type::COMMA, "Expected comma after function parameter expression");
         }
         // Get global function.
         consume(token_type::RIGHT_PAREN, "Expected ')' to end a function call.");

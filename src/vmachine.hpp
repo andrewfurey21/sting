@@ -22,6 +22,7 @@ struct call_frame {
     function f; // function bytecode should be static during runtime.
     u64 pc;
     u64 bp; // base pointer of function call on value_stack
+    // bp is the first value not accessible by the function call.
 
     call_frame(const function& func, u64 bp = 0) : f(func), bp(bp), pc(0) {}
     call_frame(const call_frame& other) : f(other.f), bp(other.bp), pc(other.pc) {}
@@ -43,7 +44,7 @@ struct vmachine {
                 case opcode::RETURN: {
                     const value v = value_stack.pop_back();
                     // delete all locals + params
-                    for (u64 i = value_stack.size() - 1; i >= call_frames.back().bp; i--) {
+                    for (u64 i = value_stack.size() - 1; i > call_frames.back().bp; i--) {
                         value_stack.pop_back();
                     }
                     value_stack.push_back(v);

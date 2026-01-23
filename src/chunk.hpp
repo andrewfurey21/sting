@@ -90,7 +90,7 @@ inline std::ostream& operator<<(std::ostream& os, const chunk& chk) {
         os << instr << "\t";
         switch (instr.op) {
             case opcode::LOAD_CONST: {
-                f32 data = chk.constant_pool.at(instr.a).number();
+                const value& data = chk.constant_pool.at(instr.a);
                 os << "Value(" << data << ")";
                 os << "\t";
             }
