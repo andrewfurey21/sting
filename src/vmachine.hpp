@@ -41,7 +41,26 @@ struct vmachine {
 
             switch(current.op) {
                 case opcode::RETURN: {
-                    return vm_result::OK;
+                    const value v = value_stack.pop_back();
+                    // delete all locals + params
+                    for (u64 i = value_stack.size() - 1; i >= call_frames.back().bp; i--) {
+                        value_stack.pop_back();
+                    }
+                    value_stack.push_back(v);
+
+                    call_frames.pop_back();
+                    if (call_frames.size() == 0)
+                        return vm_result::OK;
+                    break;
+                }
+
+                case opcode::CALL: {
+                    // value_stack: arg1, arg2, arg3, fn, {}
+                    // fn gets popped before execution.
+                    function f = *static_cast<function*>(value_stack.pop_back().obj());
+                    call_frame frame(f, value_stack.size() - f.get_arity() - 1);
+                    call_frames.push_back(frame);
+                    break;
                 }
 
                 case opcode::LOAD_CONST: {
@@ -216,15 +235,6 @@ struct vmachine {
                     break;
                 }
 
-                case opcode::CALL: {
-                    /*
-                    a = index of function in current chunk constant pool
-                    add a new call frame with the function (possibly from global or local)
-                    set pc to start of function.chunk.bytecode
-                    */
-                    panic("Unimplemented CALL op");
-                }
-
                 default: {
                     std::stringstream errMessage;
                     errMessage << "Unknown opcode: " << static_cast<u64>(current.op);
@@ -240,7 +250,6 @@ struct vmachine {
         return call_frames.at(0).f.get_chunk();
     }
 
-    // chunk chk;
     dynarray<call_frame> call_frames;
     dynarray<value> value_stack;
     hashmap<string, value> globals;

@@ -124,7 +124,8 @@ void parser::fun_declaration() {
     consume(token_type::IDENTIFIER, "Expected function name");
 
     // store function name in script constant pool
-    u64 fn_index = parse_global_variable_name();
+    u64 name_index = parse_global_variable_name();
+    u64 fn_line = prev->line;
     c.scope_depth++;
     u64 arity = 0; // for error checking.
     consume(token_type::LEFT_PAREN, "Expected '(' after function name");
@@ -140,7 +141,7 @@ void parser::fun_declaration() {
     consume(token_type::RIGHT_PAREN, "Expected ')' after function definition");
 
     const string& fname =
-        *static_cast<string*>(get_current_function().get_chunk().constant_pool.at(fn_index).obj());
+        *static_cast<string*>(get_current_function().get_chunk().constant_pool.at(name_index).obj());
 
     consume(token_type::LEFT_BRACE, "Expected '{' after function declaration");
 
@@ -150,26 +151,23 @@ void parser::fun_declaration() {
     consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
     c.scope_depth--;
 
-    // parameters are included in the local count.
-    u64 num_locals = 0;
-    while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
-        num_locals++;
-        c.locals.pop_back();
+    if (c.functions.back().get_chunk().bytecode.back().op != opcode::RETURN) {
+        c.functions.back().write_instruction(opcode::NIL, fn_line);
+        c.functions.back().write_instruction(opcode::RETURN, fn_line);
     }
 
-    // like cdecl, caller cleans up stack.
-    if (num_locals == 1) {
-        get_current_function().write_instruction(opcode::POP, prev->line);
-    } else if (num_locals > 1) {
-        get_current_function().write_instruction(opcode::POPN, prev->line, num_locals);
-    } else {
-        // no need to pop when theres no locals.
-    }
+    // we cant pop off parameters statically atm because result will be on top of args.
+    // return opcode handles this using the base pointer.
 
     // at end, store function in previous functions constant pool
     const function& f = c.functions.pop_back();
     const value fv(static_cast<object const*>(&f), vtype::FUNCTION);
-    get_current_function().load_constant(fv);
+    // load const push function onto stack here.
+    u64 findex = get_current_function().load_constant(fv);
+    get_current_function().write_instruction(opcode::LOAD_CONST, fn_line, findex);
+    // add function name to global hashtable at runtime.
+    get_current_function().write_instruction(opcode::DEFINE_GLOBAL, prev->line, name_index);
+    // define global pops the value stack.
 }
 
 // add local variable to list of variables in given scope.
@@ -192,6 +190,7 @@ void parser::declare_local_variable() {
     c.locals.push_back(l); // local == token + scope
 }
 
+// this is kinda weird, multiple copies of global names in constant pool. idk.
 u64 parser::parse_global_variable_name() {
     string name(prev->start, prev->length);
     value v(&name, vtype::STRING);
@@ -229,6 +228,7 @@ void parser::variable(bool assignable) {
     named_variable(*prev, assignable);
 }
 
+// includes function calls
 void parser::named_variable(const token& tok_name, bool assignable) {
     if (current->type == token_type::EQUAL) {
         panic_if(!assignable, "Cannot assign to this expression");
@@ -244,6 +244,28 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             expression();
             get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
         }
+    } else if (current->type == token_type::LEFT_PAREN) {
+        // attempting function call
+        // only checking globals, because closures not implemented yet.
+        u64 index = parse_global_variable_name();
+        u64 fnline = current->line;
+        while (true) {
+            get_next_token();
+            if (current->type == token_type::RIGHT_PAREN) {
+                break;
+            } else {
+                expression();
+                if (current->type == token_type::RIGHT_PAREN) {
+                    break;
+                }
+                consume(token_type::COMMA, "Expected comma after function parameter expression");
+            }
+        }
+        // Get global function.
+        consume(token_type::RIGHT_PAREN, "Expected ')' to end a function call.");
+        get_current_function().write_instruction(opcode::GET_GLOBAL, fnline, index);
+        get_current_function().write_instruction(opcode::CALL, fnline);
+        // call pops the function object off the stack.
     } else {
         i64 local = c.resolve_local(*prev);
         if (local == -1) {
@@ -253,6 +275,17 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
         }
     }
+}
+
+void parser::return_statement() {
+    get_next_token();
+    if (current->type != token_type::SEMICOLON) {
+        expression();
+    } else {
+        get_current_function().write_instruction(opcode::NIL, prev->line);
+    }
+    consume(token_type::SEMICOLON, "Expected ';' after return expression");
+    get_current_function().write_instruction(opcode::RETURN, prev->line);
 }
 
 void parser::statement() {
@@ -281,6 +314,8 @@ void parser::statement() {
             get_current_function().write_instruction(opcode::POPN, prev->line, count);
 
         c.scope_depth--;
+    } else if (current->type == token_type::RETURN) {
+        return_statement();
     } else {
         expression_statement();
     }
@@ -370,7 +405,6 @@ void parser::if_statement() {
 }
 
 void parser::block() {
-    // get_next_token();
     while (current->type != token_type::RIGHT_BRACE && current->type != token_type::END_OF_FILE) {
         declaration();
     }
@@ -382,6 +416,8 @@ void parser::expression_statement() {
     get_current_function().write_instruction(opcode::POP, prev->line);
 }
 
+// should be able to escape quickly if token is just a semicolon.
+// for ;; doesn't work etc.
 void parser::expression() {
     parse_precedence(precedence::ASSIGNMENT);
 }

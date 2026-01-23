@@ -1,8 +1,8 @@
 
-fun print_hello_n_times(n, a) {
+fun print_str_n_times(n, str) {
     for (var i = 0; i < n; i = i + 1) {
-    	print "hello";
+        print str;
     }
-
-    print a;
 }
+
+print_str_n_times(10, "hello");

@@ -17,6 +17,7 @@ public:
     function& operator=(function&& other);
 
     chunk& get_chunk() { return chk; }
+    u64 get_arity() { return arity; }
     void write_instruction(const opcode op, u64 line, u32 a = 0);
     u32 load_constant(const value& val);
     object *clone() const override;

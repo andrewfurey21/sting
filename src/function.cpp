@@ -6,7 +6,8 @@ function::function() : function("unnamed_function_warning", 0) {}
 
 function::function(const string& name, u64 arity) :
     name(name),
-    arity(arity)
+    arity(arity),
+    chk(name.data()) // hack
 {
 }
 

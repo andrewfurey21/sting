@@ -50,7 +50,7 @@ struct chunk {
     chunk() : name("unnamed_chunk") {}
     // could just use my string
     chunk(const std::string& name) : name(name) {}
-    std::string name;
+    std::string name; // should be sting::string
     dynarray<instruction> bytecode;
     // globals (functions, strs, global names)
     dynarray<value> constant_pool;

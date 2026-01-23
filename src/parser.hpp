@@ -49,12 +49,6 @@ struct compiler {
     // all locals in the current scope get popped off when going out of scope.
     // back through the stack and find first one with same token.
 
-    // run at end of function compilation
-    void finish_current_function() {
-        // store function object in functions.at(size - 2).chk.constant pool
-        // functions.pop_back()
-    }
-
     i64 resolve_local(const token& t) {
         for (i64 i{static_cast<i64>(locals.size()) - 1l}; i >= 0; i--) {
             if (locals.at(i).name == t) {
@@ -97,6 +91,7 @@ public:
     u64 parse_global_variable_name();
     void named_variable(const token& name, bool assignable);
     void block();
+    void return_statement();
     void statement();
     void if_statement();
     void while_statement();
