@@ -99,7 +99,6 @@ void parser::declaration() {
 }
 
 void parser::declare_function_param() {
-    // its not like a scope though. you can't access locals outside the function call.
     panic_if(c.scope_depth == 0, "Parameters are declared in a local scope");
 
     local l = {
@@ -111,6 +110,7 @@ void parser::declare_function_param() {
     for (u64 i = c.locals.size(); i > 0; i--) {
         const local& current_local = c.locals.at(i - 1);
         if (c.scope_depth > current_local.depth) break;
+        // if (c.scope_depth != current_local.depth) break;
         panic_if(current_local.name == l.name, "Cannot have parameters with the same name.");
     }
 
@@ -149,7 +149,6 @@ void parser::fun_declaration() {
     block();
 
     consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
-    c.scope_depth--;
 
     if (c.functions.back().get_chunk().bytecode.back().op != opcode::RETURN) {
         c.functions.back().write_instruction(opcode::NIL, fn_line);
@@ -159,6 +158,17 @@ void parser::fun_declaration() {
     // we cant pop off parameters statically atm because result will be on top of args.
     // return opcode handles this using the base pointer.
 
+    u64 count = 0;
+
+    // TODO: needs to be its own helper function, anytime scope_depth--;
+    while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
+        c.locals.pop_back();
+        count++;
+    }
+
+    std::cout << count << "\n";
+
+    c.scope_depth--;
     // at end, store function in previous functions constant pool
     const function& f = c.functions.pop_back();
     const value fv(static_cast<object const*>(&f), vtype::FUNCTION);
@@ -380,6 +390,12 @@ void parser::for_statement() {
     // end_for_loop
     backpatch(end_for_loop);
     get_current_function().write_instruction(opcode::POP, prev->line);
+
+
+    while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
+        c.locals.pop_back();
+    }
+
     c.scope_depth -= 1;
 }
 

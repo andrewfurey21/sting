@@ -42,16 +42,17 @@ struct vmachine {
 
             switch(current.op) {
                 case opcode::RETURN: {
+                    if (call_frames.size() == 1) {
+                        call_frames.pop_back();
+                        return vm_result::OK;
+                    }
+                    // save the returned value, delete all locals + params made by the call.
                     const value v = value_stack.pop_back();
-                    // delete all locals + params
                     for (u64 i = value_stack.size() - 1; i > call_frames.back().bp; i--) {
                         value_stack.pop_back();
                     }
                     value_stack.push_back(v);
-
                     call_frames.pop_back();
-                    if (call_frames.size() == 0)
-                        return vm_result::OK;
                     break;
                 }
 

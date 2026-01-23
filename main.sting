@@ -1,8 +1,15 @@
-
 fun print_str_n_times(n, str) {
-    for (var i = 0; i < n; i = i + 1) {
-        print str;
-    }
+    print n;
+    print str;
 }
 
-print_str_n_times(10, "hello");
+fun square(n) {
+    var result = n * n;
+    print "Square: ";
+    print result;
+    print "---";
+    return result;
+}
+
+var result = square(2);
+print_str_n_times(5, "fuck you");
