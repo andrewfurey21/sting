@@ -4,12 +4,12 @@ fun print_str_n_times(n, str) {
 }
 
 fun square(n) {
-    var result = n * n;
+    var result = n * n * n;
     print "Square: ";
     print result;
     print "---";
     return result;
 }
 
-var result = square(2);
+square(2);
 print_str_n_times(5, "fuck you");

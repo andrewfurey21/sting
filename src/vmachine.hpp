@@ -48,7 +48,7 @@ struct vmachine {
                     }
                     // save the returned value, delete all locals + params made by the call.
                     const value v = value_stack.pop_back();
-                    for (u64 i = value_stack.size() - 1; i > call_frames.back().bp; i--) {
+                    for (u64 i = value_stack.size(); i > call_frames.back().bp; i--) {
                         value_stack.pop_back();
                     }
                     value_stack.push_back(v);
@@ -60,7 +60,7 @@ struct vmachine {
                     // value_stack: arg1, arg2, arg3, fn, {}
                     // fn gets popped before execution.
                     function f = *static_cast<function*>(value_stack.pop_back().obj());
-                    call_frame frame(f, value_stack.size() - f.get_arity() - 1);
+                    call_frame frame(f, value_stack.size() - f.get_arity());
                     call_frames.push_back(frame);
                     break;
                 }

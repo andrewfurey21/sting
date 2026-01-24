@@ -150,7 +150,8 @@ void parser::fun_declaration() {
 
     consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
 
-    if (c.functions.back().get_chunk().bytecode.back().op != opcode::RETURN) {
+    const dynarray<instruction>& bc = c.functions.back().get_chunk().bytecode;
+    if (bc.size() == 0 || bc.back().op != opcode::RETURN) {
         c.functions.back().write_instruction(opcode::NIL, fn_line);
         c.functions.back().write_instruction(opcode::RETURN, fn_line);
     }
@@ -158,15 +159,10 @@ void parser::fun_declaration() {
     // we cant pop off parameters statically atm because result will be on top of args.
     // return opcode handles this using the base pointer.
 
-    u64 count = 0;
-
     // TODO: needs to be its own helper function, anytime scope_depth--;
     while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
         c.locals.pop_back();
-        count++;
     }
-
-    std::cout << count << "\n";
 
     c.scope_depth--;
     // at end, store function in previous functions constant pool
