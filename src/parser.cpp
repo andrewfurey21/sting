@@ -356,7 +356,7 @@ void parser::while_statement() {
 
 void parser::for_statement() {
     // this isn't great, the variable will be in a different scope than the block
-    c.scope_depth += 1;
+    c.scope_depth++;
     get_next_token();
     consume(token_type::LEFT_PAREN, "Expected '(' after for");
 
@@ -372,7 +372,7 @@ void parser::for_statement() {
 
     u64 to_statement = emit_jump(opcode::BRANCH);
     u64 to_inc = get_current_function().get_chunk().bytecode.size();
-    expression(); // i++
+    expression(); // i++, expression_statement expects a ;
     get_current_function().write_instruction(opcode::POP, prev->line);
     consume(token_type::RIGHT_PAREN, "Expected ')' after for loop statement");
 
@@ -387,12 +387,11 @@ void parser::for_statement() {
     backpatch(end_for_loop);
     get_current_function().write_instruction(opcode::POP, prev->line);
 
-
     while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
         c.locals.pop_back();
     }
 
-    c.scope_depth -= 1;
+    c.scope_depth--;
 }
 
 void parser::if_statement() {

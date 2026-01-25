@@ -206,13 +206,13 @@ struct vmachine {
                 }
 
                 case opcode::GET_LOCAL: {
-                    u32 index = current.a;
+                    u32 index = current.a + call_frames.back().bp;
                     value_stack.push_back(value_stack.at(index));
                     break;
                 }
 
                 case opcode::SET_LOCAL: {
-                    u32 index = current.a;
+                    u32 index = current.a + call_frames.back().bp;
                     value_stack.at(index) = value_stack.back();
                     break;
                 }

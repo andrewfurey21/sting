@@ -1,15 +1,11 @@
-fun print_str_n_times(n, str) {
+
+fun func(n, m) {
     print n;
-    print str;
-}
-
-fun square(n) {
-    var result = n * n * n;
-    print "Square: ";
-    print result;
+    print m;
     print "---";
-    return result;
 }
 
-square(2);
-print_str_n_times(5, "fuck you");
+{
+    var i = 0;
+    func(2, 3);
+}
