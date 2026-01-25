@@ -7,7 +7,7 @@ function::function() : function("unnamed_function_warning", 0) {}
 function::function(const string& name, u64 arity) :
     name(name),
     arity(arity),
-    chk(name.data()) // hack
+    chk(std::string(name.data(), name.size())) // hack
 {
 }
 
