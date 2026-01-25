@@ -385,7 +385,7 @@ void parser::for_statement() {
 
     // end_for_loop
     backpatch(end_for_loop);
-    get_current_function().write_instruction(opcode::POP, prev->line);
+    get_current_function().write_instruction(opcode::POPN, prev->line, 2); // truth value + var i
 
     while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
         c.locals.pop_back();
