@@ -92,7 +92,11 @@ value value::operator==(const value& other) const {
 
     switch(this->type) {
         case vtype::NIL: {
-            return value(static_cast<u8>(true));
+            if (other.type == vtype::NIL) {
+                return value(static_cast<u8>(true));
+            } else {
+                return value(static_cast<u8>(false));
+            }
         }
         case vtype::BOOLEAN: {
             return value(static_cast<u8>(this->b == other.b));
@@ -162,6 +166,7 @@ std::ostream& operator<<(std::ostream& os, const value& v) {
 }
 
 void check_type(const value &a, const value &b) {
+    if (a.type == vtype::NIL || b.type == vtype::NIL) return;
     panic_if(a.type != b.type, "Type Error", -1);
 }
 

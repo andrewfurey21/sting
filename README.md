@@ -8,3 +8,4 @@ Bytecode VM based on clox from [Crafting Interpreters](https://craftinginterpret
 - [ ] string interning
 - [ ] hash caching
 - [ ] accessing globals that don't exist yet should panic at compile time.
+- [ ] actually take car with saving line info, maybe make small compiler-explorer? like CE=1, could use protobuf

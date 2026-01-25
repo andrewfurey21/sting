@@ -43,6 +43,10 @@ struct vmachine {
             switch(current.op) {
                 case opcode::RETURN: {
                     if (call_frames.size() == 1) {
+                        std::cout << "stack size: " << value_stack.size() << "\n";
+                        for (u64 i = 0; i < value_stack.size(); i++) {
+                            std::cout << i << ": " << value_stack.at(i) << "\n";
+                        }
                         call_frames.pop_back();
                         return vm_result::OK;
                     }

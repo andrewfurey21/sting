@@ -1,11 +1,4 @@
 
-fun func(n, m) {
-    print n;
-    print m;
-    print "---";
-}
+for (var i = 0; i < 1; i = i + 1) {
 
-{
-    var i = 0;
-    func(2, 3);
 }
