@@ -255,6 +255,7 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         // only checking globals, because closures not implemented yet.
         u64 index = parse_global_variable_name();
         u64 fnline = current->line;
+        u64 num_args = 0;
         get_next_token();
         while (true) {
             if (current->type == token_type::RIGHT_PAREN) {
@@ -262,6 +263,7 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             }
 
             expression();
+            num_args++;
             if (current->type == token_type::RIGHT_PAREN) {
                 break;
             }
@@ -270,7 +272,7 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         // Get global function.
         consume(token_type::RIGHT_PAREN, "Expected ')' to end a function call.");
         get_current_function().write_instruction(opcode::GET_GLOBAL, fnline, index);
-        get_current_function().write_instruction(opcode::CALL, fnline);
+        get_current_function().write_instruction(opcode::CALL, fnline, num_args);
         // call pops the function object off the stack.
     } else {
         i64 local = c.resolve_local(*prev);

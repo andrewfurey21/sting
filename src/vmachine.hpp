@@ -34,6 +34,24 @@ struct vmachine {
         call_frames.push_back(cf);
     }
 
+    void call(const value& callable, const vtype& type, const u64 num_args) {
+        switch (type) {
+            case vtype::FUNCTION: {
+                function f = *static_cast<function*>(callable.obj());
+                panic_if(f.get_arity() != num_args, "Wrong number of args to function call");
+                call_frame frame(f, value_stack.size() - f.get_arity());
+                call_frames.push_back(frame);
+                break;
+            }
+            // case vtype::NATIVE_FUNCTION: {
+            //     break;
+            // }
+            default: {
+                panic("Cannot call");
+            }
+        }
+    }
+
     vm_result run_chunk() {
         for (;;) {
             u64 *const pc = &call_frames.back().pc;
@@ -63,9 +81,10 @@ struct vmachine {
                 case opcode::CALL: {
                     // value_stack: arg1, arg2, arg3, fn, {}
                     // fn gets popped before execution.
-                    function f = *static_cast<function*>(value_stack.pop_back().obj());
-                    call_frame frame(f, value_stack.size() - f.get_arity());
-                    call_frames.push_back(frame);
+                    const u64 num_args = current.a;
+                    const value& callable = value_stack.pop_back();
+                    const vtype type = callable.type;
+                    call(callable, type, num_args);
                     break;
                 }
 
