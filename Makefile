@@ -10,6 +10,7 @@ all:
 	g++ -c -o ./build/interpreter.o ./src/interpreter.cpp -std=$(CXX) $(FLAGS)
 	g++ -c -o ./build/string.o ./src/string.cpp -std=$(CXX) $(FLAGS)
 	g++ -c -o ./build/function.o ./src/function.cpp -std=$(CXX) $(FLAGS)
+	g++ -c -o ./build/native_function.o ./src/native_function.cpp -std=$(CXX) $(FLAGS)
 	g++ -c -o ./build/main.o ./src/main.cpp -std=$(CXX) $(FLAGS)
 
 	g++ -o sting ./build/*.o # -fsanitize=address

@@ -6,7 +6,6 @@ namespace sting {
 vm_result interpret(const std::filesystem::path& file, bool debug) {
     bool result;
     std::string source = read_file(file);
-    
     if (debug) {
         std::cout << "------- SOURCE -------\n" << source
                   << "----------------------\n";
@@ -24,7 +23,6 @@ vm_result interpret(const std::filesystem::path& file, bool debug) {
 
     if (debug) {
         std::cout << vm.script() << "\n";
-    
         // NOTE: for closures, this needs to be dfs
         for (u64 i = 0; i < vm.script().constant_pool.size(); i++) {
             const value& v = vm.script().constant_pool.at(i);

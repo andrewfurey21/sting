@@ -1,4 +1,5 @@
 #include "parser.hpp"
+#include "native_function.hpp"
 #include "utilities.hpp"
 
 namespace sting {
@@ -20,6 +21,7 @@ bool parser::match(token_type type) {
 }
 
 bool parser::parse() {
+    define_native_functions();
     current = &tokens.at(0);
 
     while (current->type != token_type::END_OF_FILE) {
@@ -31,6 +33,19 @@ bool parser::parse() {
 
     get_current_function().write_instruction(opcode::RETURN, current->line);
     return true;
+}
+
+void parser::define_native_function(const string& name, const native_function& fn) {
+    const value vname(&name, vtype::STRING);
+    const u64 name_index = get_script().load_constant(vname);
+    const value vfn(static_cast<object const*>(&fn), vtype::NATIVE_FUNCTION);
+    const u64 fn_index = get_script().load_constant(vfn);
+    get_script().write_instruction(opcode::LOAD_CONST, 0, fn_index);
+    get_script().write_instruction(opcode::DEFINE_GLOBAL, 0, name_index);
+}
+
+void parser::define_native_functions() {
+    define_native_function("clock", native_function("clock", 0, clock));
 }
 
 void parser::error_at_token(const token& t, const std::string& msg) {

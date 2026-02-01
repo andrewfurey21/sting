@@ -151,6 +151,7 @@ std::ostream& operator<<(std::ostream& os, const value& v) {
             break;
         }
         case vtype::STRING:
+        case vtype::NATIVE_FUNCTION:
         case vtype::FUNCTION: {
             u8* s = v.o->cstr();
             os << s;

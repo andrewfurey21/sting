@@ -11,7 +11,8 @@ enum class vtype {
     NIL,
     NUMBER,
     STRING,
-    FUNCTION
+    FUNCTION,
+    NATIVE_FUNCTION,
 };
 
 class value {

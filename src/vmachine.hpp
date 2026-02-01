@@ -9,6 +9,7 @@
 #include "string.hpp"
 #include "chunk.hpp"
 #include "function.hpp"
+#include "native_function.hpp"
 
 namespace sting {
 
@@ -43,9 +44,18 @@ struct vmachine {
                 call_frames.push_back(frame);
                 break;
             }
-            // case vtype::NATIVE_FUNCTION: {
-            //     break;
-            // }
+            case vtype::NATIVE_FUNCTION: {
+                // no return, so have to fix the stack here.
+                // pop off args
+                native_function nf = *static_cast<native_function*>(callable.obj());
+                panic_if(nf.get_arity() != num_args, "Wrong number of args to native function call");
+                dynarray<value> args;
+                for (u64 i = 0; i < num_args; i++) {
+                    args.push_back(value_stack.pop_back()); // reverse order
+                }
+                value_stack.push_back(nf.call(args));
+                break;
+            }
             default: {
                 panic("Cannot call");
             }
@@ -277,7 +287,7 @@ struct vmachine {
 
     dynarray<call_frame> call_frames;
     dynarray<value> value_stack;
-    hashmap<string, value> globals;
+    hashmap<string, value> globals; // builtins get stored here too?
 };
 
 } // namespace sting

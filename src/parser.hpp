@@ -69,6 +69,8 @@ public:
     parser();
     parser(const std::string& name);
     bool parse();
+    void define_native_function(const string& name, const native_function& fn);
+    void define_native_functions();
     dynarray<token>& get_tokens() { return tokens; }
     function& get_script() { return c.functions.at(0); }
     void error_at_token(const token& t, const std::string& msg);

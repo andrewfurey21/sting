@@ -1,7 +1,37 @@
 
-fun hello() {
-    print "hello";
+fun print_primes_up_to(max) {
+    var i = 2;
+    while (i <= max) {
+        var start = 2;
+        var is_prime = true;
+        var factor = 0;
+    
+        while (start < i and is_prime) {
+        	var result = i;
+    
+    	while (result > 0) {
+    	    result = result - start;
+    	}
+    
+    	if (result + 0.0001 > 0) {
+    	    is_prime = false;
+    	    factor = start;
+    	}
+    	start = start + 1;
+        }
+    
+        if (is_prime) {
+            print i;
+        }
+    
+        i = i + 1;
+    }
 }
 
-hello(5);
+var start = clock();
+print_primes_up_to(2003);
+var end = clock();
+
+print "Finished program in (seconds): ";
+print (end - start) / 1000;
 
