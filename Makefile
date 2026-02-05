@@ -1,19 +1,27 @@
-CXX = c++17
-FLAGS = -g -O0
+CXX = g++
+CXXFLAGS = -Isrc -std=c++17 -g -O0
+ASAN = # -fsanitize=address
 
-all:
-	@mkdir -p ./build
-	g++ -c -o ./build/scanner.o ./src/scanner.cpp -std=$(CXX) $(FLAGS)
-	g++ -c -o ./build/parser.o ./src/parser.cpp -std=$(CXX) $(FLAGS)
-	g++ -c -o ./build/value.o ./src/value.cpp -std=$(CXX) $(FLAGS)
-	g++ -c -o ./build/vmachine.o ./src/vmachine.cpp -std=$(CXX) $(FLAGS)
-	g++ -c -o ./build/interpreter.o ./src/interpreter.cpp -std=$(CXX) $(FLAGS)
-	g++ -c -o ./build/string.o ./src/string.cpp -std=$(CXX) $(FLAGS)
-	g++ -c -o ./build/function.o ./src/function.cpp -std=$(CXX) $(FLAGS)
-	g++ -c -o ./build/native_function.o ./src/native_function.cpp -std=$(CXX) $(FLAGS)
-	g++ -c -o ./build/main.o ./src/main.cpp -std=$(CXX) $(FLAGS)
+SRC_DIR = src
+BUILD_DIR = build
 
-	g++ -o sting ./build/*.o # -fsanitize=address
+SRC = $(wildcard $(SRC_DIR)/*.cpp)
+HEADERS = $(wildcard $(SRC_DIR)/*.hpp)
+OBJ = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SRC))
 
+TARGET = sting
+
+all: $(TARGET)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS) $(BUILD_DIR)
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+$(TARGET): $(OBJ)
+	$(CXX) -o $@ $^ $(ASAN)
+
+.PHONY: clean
 clean:
-	rm ./build/*.o
+	rm -rf $(BUILD_DIR) $(TARGET)
