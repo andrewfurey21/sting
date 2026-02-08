@@ -1,8 +1,8 @@
 # sting-lang
 
-Bytecode VM based on clox from [Crafting Interpreters](https://craftinginterpreters.com/).
+Small compiler and bytecode vm for a programming language based on clox from [Crafting Interpreters](https://craftinginterpreters.com/). It has variables and for loops and functions and gc. That's about it.
 
-## notes / todos
+## cool stuff to read up on later.
 
 - [ ] register vs stack instructions (lua5 vs python)
 - [ ] string interning
