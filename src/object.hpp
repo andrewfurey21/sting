@@ -14,7 +14,7 @@ public:
     virtual ~object() = default;
 };
 
-static inline dynarray<object*> object_list;
+extern dynarray<object*> object_list;
 
 } // namespace sting
 

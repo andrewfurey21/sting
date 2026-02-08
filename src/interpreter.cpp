@@ -3,6 +3,8 @@
 
 namespace sting {
 
+dynarray<object*> object_list;
+
 vm_result interpret(const std::filesystem::path& file, bool debug) {
     bool result;
     std::string source = read_file(file);
@@ -56,7 +58,6 @@ void manage_result(vm_result result) {
             std::cerr << "Unknown interpreter result.\n";
     }
 
-    // hack, when redoing need to think more carefully about gc
     for (u64 i{}; i < object_list.size(); i++) {
         delete object_list.at(i);
         object_list.at(i) = nullptr;
