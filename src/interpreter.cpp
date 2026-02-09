@@ -24,16 +24,21 @@ vm_result interpret(const std::filesystem::path& file, bool debug) {
     vmachine vm(p.get_script());
 
     if (debug) {
-        std::cout << vm.script() << "\n";
-        // NOTE: for closures, this needs to be dfs
-        for (u64 i = 0; i < vm.script().constant_pool.size(); i++) {
-            const value& v = vm.script().constant_pool.at(i);
-            if (v.type == vtype::FUNCTION) {
-                function& f = *static_cast<function*>(v.obj());
-                std::cout << f.get_chunk() << "\n";
+        dynarray<chunk> chunks;
+        chunks.push_back(vm.script());
+
+        while (chunks.size() > 0) {
+            const chunk& current = chunks.pop_back();
+            std::cout << current << "\n";
+            for (u64 i = 0; i < current.constant_pool.size(); i++) {
+                const value& v = current.constant_pool.at(i);
+                if (v.type == vtype::FUNCTION) {
+                    function& f = *static_cast<function*>(v.obj());
+                    // std::cout << f.get_chunk() << "\n";
+                    chunks.push_back(f.get_chunk());
+                }
             }
         }
-
     }
 
     return vm.run_chunk();
