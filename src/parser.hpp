@@ -38,25 +38,41 @@ struct local {
     }
 };
 
+// in the book its a stack of compilers.
 struct compiler {
-    compiler() : functions(), scope_depth(0), locals() {
-        functions.push_back(function("script", 0));
+    compiler() : functions(), scope_depth(0), _locals() {
+        new_function(function("script", 0));
     }
     dynarray<function> functions;
     i64 scope_depth;
-    dynarray<local> locals; // kind of like simulating stack but at compile time
+
+    // kind of like simulating stack but at compile time
     // get correct location of local on the stack.
     // all locals in the current scope get popped off when going out of scope.
     // back through the stack and find first one with same token.
+    dynarray<dynarray<local>> _locals;
 
     i64 resolve_local(const token& t) {
-        for (i64 i{static_cast<i64>(locals.size()) - 1l}; i >= 0; i--) {
-            if (locals.at(i).name == t) {
-                panic_if(locals.at(i).depth == -1, "Cannot define local with itself.");
+        for (i64 i{static_cast<i64>(locals().size()) - 1l}; i >= 0; i--) {
+            if (locals().at(i).name == t) {
+                panic_if(locals().at(i).depth == -1,
+                        "Cannot define local with itself.");
                 return i;
             }
         }
         return -1;
+    }
+
+    void new_function(const function& f) {
+        functions.push_back(f);
+        _locals.push_back(dynarray<local>());
+    }
+
+    dynarray<local>& locals() { return _locals.back(); }
+
+    function finish_function() {
+        panic_if(_locals.pop_back().size() > 0, "Stack is not zero, missed pop somewhere");
+        return functions.pop_back();
     }
 
     ~compiler() {
@@ -64,6 +80,7 @@ struct compiler {
     }
 };
 
+// rename parser -> compiler. merge parser + compiler.
 class parser {
 public:
     parser();
@@ -90,7 +107,7 @@ public:
     void declare_function_param();
     void declare_local_variable();
     void variable(bool assignable);
-    u64 parse_name();
+    u64 parse_variable_name();
     void named_variable(const token& name, bool assignable);
     void block();
     void return_statement();
@@ -118,7 +135,6 @@ public:
     bool parse_error;
     bool panic;
 
-    // most important part
     compiler c;
 };
 

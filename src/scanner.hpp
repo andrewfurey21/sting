@@ -28,6 +28,7 @@ enum class token_type {
   ERROR, END_OF_FILE
 };
 
+// make tagged union?
 struct token {
     token_type type;
     u8* start;

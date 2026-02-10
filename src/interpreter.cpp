@@ -34,7 +34,6 @@ vm_result interpret(const std::filesystem::path& file, bool debug) {
                 const value& v = current.constant_pool.at(i);
                 if (v.type == vtype::FUNCTION) {
                     function& f = *static_cast<function*>(v.obj());
-                    // std::cout << f.get_chunk() << "\n";
                     chunks.push_back(f.get_chunk());
                 }
             }

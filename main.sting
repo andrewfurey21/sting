@@ -1,11 +1,16 @@
 
-fun hello() {
-    fun p() {
-    print "hello";
+fun function() {
+    fun nested() {
+    	fun nested_nested() {
+	    var x = 10;
+	    return x * x;
+	}
+	return nested_nested;
     }
-    return p;
+    return nested;
 }
 
-var x;
-x = hello();
-x();
+var nested = function();
+var nested_nested = nested();
+
+print nested_nested();

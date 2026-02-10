@@ -122,22 +122,23 @@ void parser::declare_function_param() {
     };
 
     // check if parameter name already exists
-    for (u64 i = c.locals.size(); i > 0; i--) {
-        const local& current_local = c.locals.at(i - 1);
+    for (u64 i = c.locals().size(); i > 0; i--) {
+        const local& current_local = c.locals().at(i - 1);
         if (c.scope_depth > current_local.depth) break;
         // if (c.scope_depth != current_local.depth) break;
         panic_if(current_local.name == l.name, "Cannot have parameters with the same name.");
     }
 
-    c.locals.push_back(l);
+    c.locals().push_back(l);
 }
 
 void parser::fun_declaration() {
     get_next_token();
     consume(token_type::IDENTIFIER, "Expected function name");
 
-    // store function name in script constant pool
-    const u64 name_index = parse_name();
+    u64 name_index = parse_variable_name();
+    declare_local_variable();
+
     const u64 fn_line = prev->line;
     c.scope_depth++;
     u64 arity = 0; // for error checking.
@@ -158,7 +159,8 @@ void parser::fun_declaration() {
 
     consume(token_type::LEFT_BRACE, "Expected '{' after function declaration");
 
-    c.functions.push_back(function(fname, arity));
+    // c.functions.push_back(function(fname, arity));
+    c.new_function(function(fname, arity));
     block();
 
     consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
@@ -173,25 +175,27 @@ void parser::fun_declaration() {
     // return opcode handles this using the base pointer.
 
     // TODO: needs to be its own helper function, anytime scope_depth--;
-    while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
-        c.locals.pop_back();
+    while (c.locals().size() > 0 && c.locals().back().depth == c.scope_depth) {
+        c.locals().pop_back();
     }
 
     c.scope_depth--;
     // at end, store function in previous functions constant pool
-    const function& f = c.functions.pop_back();
+    const function& f = c.finish_function();
     const value fv(static_cast<object const*>(&f), vtype::FUNCTION);
-    // load const push function onto stack here.
+
     u64 findex = get_current_function().load_constant(fv);
     get_current_function().write_instruction(opcode::LOAD_CONST, fn_line, findex);
-    // add function name to global hashtable at runtime.
-    get_current_function().write_instruction(opcode::DEFINE_GLOBAL, prev->line, name_index);
-    // define global pops the value stack.
+    if (c.scope_depth == 0) {
+        get_current_function().write_instruction(opcode::DEFINE_GLOBAL, prev->line, name_index);
+    } else {
+        c.locals().back().depth = c.scope_depth;
+    }
 }
 
 // add local variable to list of variables in given scope.
 void parser::declare_local_variable() {
-    if (c.scope_depth == 0) return;
+    if (c.scope_depth == 0) return; // TODO: move this outside
 
     local l = {
         .name = *prev,
@@ -199,19 +203,19 @@ void parser::declare_local_variable() {
     };
 
     // check if local with same scope has same name
-    for (u64 i = c.locals.size(); i > 0; i--) {
-        const local& current_local = c.locals.at(i - 1);
+    for (u64 i = c.locals().size(); i > 0; i--) {
+        const local& current_local = c.locals().at(i - 1);
         if (current_local.depth < c.scope_depth && current_local.depth != -1)
             break;
 
         panic_if(l == current_local, "Error: redeclaration of variable");
     }
-    c.locals.push_back(l); // local == token + scope
+    c.locals().push_back(l); // local == token + scope
 }
 
 // parse identifier into sting::string
 // put in current functions constant pool
-u64 parser::parse_name() {
+u64 parser::parse_variable_name() {
     string name(prev->start, prev->length);
     value v(&name, vtype::STRING);
     return get_current_function().load_constant(v);
@@ -226,14 +230,16 @@ void parser::var_declaration() {
     if (c.scope_depth > 0) {
         index = 0;
     } else {
-        index = parse_name();
+        index = parse_variable_name();
     }
 
     if (current->type == token_type::EQUAL) {
         get_next_token();
         expression();
-        if (c.locals.size() >= 1)
-            c.locals.back().depth = c.scope_depth;
+
+        // fix the scope of the variable we just added
+        if (c.scope_depth > 0)
+            c.locals().back().depth = c.scope_depth;
     } else {
         get_current_function().write_instruction(opcode::NIL, current->line);
     }
@@ -248,29 +254,19 @@ void parser::variable(bool assignable) {
     named_variable(*prev, assignable);
 }
 
-// includes function calls
 void parser::named_variable(const token& tok_name, bool assignable) {
-    if (current->type == token_type::EQUAL) {
-        panic_if(!assignable, "Cannot assign to this expression");
-
-        i64 local = c.resolve_local(*prev);
-        if (local == -1) {
-            u64 index = parse_name();
-            get_next_token();
-            expression();
-            get_current_function().write_instruction(opcode::SET_GLOBAL, prev->line, index);
-        } else {
-            get_next_token();
-            expression();
-            get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
-        }
-    } else if (current->type == token_type::LEFT_PAREN) {
-        // attempting function call
+    // function call else assignment else get.
+    if (current->type == token_type::LEFT_PAREN) {
         // only checking globals, because closures not implemented yet.
-        u64 index = parse_name();
+        token fname = *prev;
         u64 fnline = current->line;
-        u64 num_args = 0;
+        u64 index = 0;
+        if (c.scope_depth == 0) {
+            index = parse_variable_name();
+        }
+
         get_next_token();
+        u64 num_args = 0;
         while (true) {
             if (current->type == token_type::RIGHT_PAREN) {
                 break;
@@ -283,15 +279,35 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             }
             consume(token_type::COMMA, "Expected comma after function parameter expression");
         }
-        // Get global function.
         consume(token_type::RIGHT_PAREN, "Expected ')' to end a function call.");
-        get_current_function().write_instruction(opcode::GET_GLOBAL, fnline, index);
+
+        i64 local = c.resolve_local(fname);
+        if (local == -1) {
+            get_current_function().write_instruction(opcode::GET_GLOBAL, fnline, index);
+        } else {
+            get_current_function().write_instruction(opcode::GET_LOCAL, fnline, local);
+        }
+
         get_current_function().write_instruction(opcode::CALL, fnline, num_args);
         // call pops the function object off the stack.
+    } else if (current->type == token_type::EQUAL) {
+        panic_if(!assignable, "Cannot assign to this expression");
+
+        i64 local = c.resolve_local(*prev);
+        if (local == -1) {
+            u64 index = parse_variable_name();
+            get_next_token();
+            expression();
+            get_current_function().write_instruction(opcode::SET_GLOBAL, prev->line, index);
+        } else {
+            get_next_token();
+            expression();
+            get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
+        }
     } else {
         i64 local = c.resolve_local(*prev);
         if (local == -1) {
-            u64 index = parse_name();
+            u64 index = parse_variable_name();
             get_current_function().write_instruction(opcode::GET_GLOBAL, prev->line, index);
         } else {
             get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
@@ -326,9 +342,9 @@ void parser::statement() {
         consume(token_type::RIGHT_BRACE, "Expected '}' after block");
 
         u32 count = 0;
-        while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
+        while (c.locals().size() > 0 && c.locals().back().depth == c.scope_depth) {
             count++;
-            c.locals.pop_back();
+            c.locals().pop_back();
         }
         if (count == 1)
             get_current_function().write_instruction(opcode::POP, prev->line);
@@ -403,8 +419,8 @@ void parser::for_statement() {
     backpatch(end_for_loop);
     get_current_function().write_instruction(opcode::POPN, prev->line, 2); // truth value + var i
 
-    while (c.locals.size() > 0 && c.locals.back().depth == c.scope_depth) {
-        c.locals.pop_back();
+    while (c.locals().size() > 0 && c.locals().back().depth == c.scope_depth) {
+        c.locals().pop_back();
     }
 
     c.scope_depth--;
