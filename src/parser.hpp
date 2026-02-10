@@ -41,7 +41,7 @@ struct local {
 // in the book its a stack of compilers.
 struct compiler {
     compiler() : functions(), scope_depth(0), _locals() {
-        new_function(function("script", 0));
+        functions.push_back(function("script", 0));
     }
     dynarray<function> functions;
     i64 scope_depth;
@@ -53,6 +53,7 @@ struct compiler {
     dynarray<dynarray<local>> _locals;
 
     i64 resolve_local(const token& t) {
+        if (scope_depth == 0) return -1;
         for (i64 i{static_cast<i64>(locals().size()) - 1l}; i >= 0; i--) {
             if (locals().at(i).name == t) {
                 panic_if(locals().at(i).depth == -1,
