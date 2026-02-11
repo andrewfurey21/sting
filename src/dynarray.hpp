@@ -85,12 +85,12 @@ public:
     }
 
     T& back() const {
-        panic_if(_size <= 0, "dynarray::back(): cannot get back of array of size 0");
+        panic_if(_size == 0, "dynarray::back(): cannot get back of array of size 0");
         return _data[_size - 1];
     }
 
     T& back(u64 from_top) const {
-        panic_if(_size <= 0, "dynarray::back(u64 from_top): cannot get back of array of size 0");
+        panic_if(_size == 0, "dynarray::back(u64 from_top): cannot get back of array of size 0");
         panic_if(_size <= from_top, "dynarray::back(u64 from_top): from_top too large");
         return _data[_size - from_top - 1];
     }
@@ -142,10 +142,11 @@ private:
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const dynarray<T>& other) {
     for (u64 i{}; i < other.size(); i++) {
-        os << std::setw(4) << std::setfill('0') << i << ' ';
+        os << i << ':';
+        // os << std::setw(4) << std::setfill('0') << i << ' ';
         os << other.at(i);
         if (i != other.size() - 1) {
-            os << "\n";
+            os << ", ";
         }
     }
     return os;

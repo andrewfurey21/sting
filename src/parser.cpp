@@ -137,6 +137,10 @@ void parser::fun_declaration() {
     consume(token_type::IDENTIFIER, "Expected function name");
 
     u64 name_index = parse_variable_name();
+
+    const string& fname =
+        *static_cast<string*>(get_current_function().get_chunk().constant_pool.at(name_index).obj());
+    c.new_function(function(fname, 0));
     declare_local_variable();
 
     const u64 fn_line = prev->line;
@@ -153,13 +157,10 @@ void parser::fun_declaration() {
         consume(token_type::COMMA, "Expected ',' after parameter definition");
     }
     consume(token_type::RIGHT_PAREN, "Expected ')' after function definition");
-
-    const string& fname =
-        *static_cast<string*>(get_current_function().get_chunk().constant_pool.at(name_index).obj());
-
     consume(token_type::LEFT_BRACE, "Expected '{' after function declaration");
 
-    c.new_function(function(fname, arity));
+    c.functions.back().get_arity() = arity;
+
     block();
 
     consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
@@ -365,7 +366,9 @@ u64 parser::emit_jump(opcode branch_type) {
 
 void parser::backpatch(u64 branch) {
     u64 current_size = get_current_function().get_chunk().bytecode.size();
-    get_current_function().get_chunk().bytecode.at(branch - 1).a = current_size - branch;
+    // get_current_function().get_chunk().bytecode.at(branch - 1).operands.push_back(current_size - branch);
+    get_current_function().get_chunk().bytecode.at(branch - 1).operands.at(0) = current_size - branch;
+    // get_current_function().get_chunk().bytecode.at(branch - 1).a = current_size - branch;
 }
 
 void parser::while_statement() {

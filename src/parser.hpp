@@ -46,7 +46,7 @@ struct compiler {
     i64 scope_depth;
 
     compiler() : functions(), scope_depth(0), _locals() {
-        functions.push_back(function("script", 0));
+        new_function(function("script", 0));
     }
 
     i64 resolve_local(const token& t, const dynarray<local>& locals) {

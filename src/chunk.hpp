@@ -39,9 +39,10 @@ enum class opcode {
 
 std::string opcode_to_string(opcode op);
 
+// when rewriting, needs to be a stream of bytes.
 struct instruction {
     opcode op;
-    u32 a;
+    dynarray<u32> operands;
 
     friend std::ostream& operator<<(std::ostream& os, const instruction& instr);
 };
@@ -59,7 +60,7 @@ struct chunk {
     void write_instruction(const opcode op, u64 line, u32 a = 0) {
         instruction instr = {
             .op = op,
-            .a = a,
+            .operands = dynarray<u32>({ a }),
         };
 
         lines.push_back(line);
@@ -78,7 +79,7 @@ struct chunk {
 };
 
 inline std::ostream& operator<<(std::ostream& os, const instruction& instr) {
-    os << opcode_to_string(instr.op) << ": " << instr.a;
+    os << opcode_to_string(instr.op) << ": " << instr.operands;
     return os;
 }
 
@@ -90,7 +91,7 @@ inline std::ostream& operator<<(std::ostream& os, const chunk& chk) {
         os << instr << "\t";
         switch (instr.op) {
             case opcode::LOAD_CONST: {
-                const value& data = chk.constant_pool.at(instr.a);
+                const value& data = chk.constant_pool.at(instr.operands.at(0));
                 os << "Value(" << data << ")";
                 os << "\t";
             }

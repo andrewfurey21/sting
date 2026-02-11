@@ -91,7 +91,7 @@ struct vmachine {
                 case opcode::CALL: {
                     // value_stack: arg1, arg2, arg3, fn, {}
                     // fn gets popped before execution.
-                    const u64 num_args = current.a;
+                    const u64 num_args = current.operands.at(0);
                     const value& callable = value_stack.pop_back();
                     const vtype type = callable.type;
                     call(callable, type, num_args);
@@ -99,7 +99,7 @@ struct vmachine {
                 }
 
                 case opcode::LOAD_CONST: {
-                    u64 index = current.a;
+                    u64 index = current.operands.at(0);
                     const value& val = get_current_chunk().constant_pool.at(index);
                     value_stack.push_back(val);
                     break;
@@ -198,7 +198,7 @@ struct vmachine {
                 }
 
                 case opcode::POPN: {
-                    u32 num = current.a;
+                    u32 num = current.operands.at(0);
                     for (u32 i{}; i < num; i++) {
                         value_stack.pop_back();
                     }
@@ -206,7 +206,7 @@ struct vmachine {
                 }
 
                 case opcode::DEFINE_GLOBAL: {
-                    u32 index = current.a;
+                    u32 index = current.operands.at(0);
                     const value& v = get_current_chunk().constant_pool.at(index);
                     const string *name = static_cast<string*>(v.obj());
                     // this looks really bad but guaranteed to be a string.
@@ -216,22 +216,22 @@ struct vmachine {
                 }
 
                 case opcode::GET_GLOBAL: {
-                    u32 index = current.a;
+                    u32 index = current.operands.at(0);
 
                     const value& v = get_current_chunk().constant_pool.at(index);
                     const string *name = static_cast<string*>(v.obj());
 
-                    panic_if(!globals.contains(*name), "Cannot get undefined variable");
+                    panic_if(!globals.contains(*name), "Cannot get undefined global");
 
                     value_stack.push_back(globals.at(*name));
                     break;
                 }
 
                 case opcode::SET_GLOBAL: {
-                    u32 index = current.a;
+                    u32 index = current.operands.at(0);
                     const value& v = get_current_chunk().constant_pool.at(index);
                     const string *name =static_cast<string*>(v.obj());
-                    panic_if(!globals.contains(*name), "Cannot set undefined variable");
+                    panic_if(!globals.contains(*name), "Cannot set undefined global");
 
                     globals.at(*name) = value_stack.back();
 
@@ -239,19 +239,19 @@ struct vmachine {
                 }
 
                 case opcode::GET_LOCAL: {
-                    u32 index = current.a + call_frames.back().bp;
+                    u32 index = current.operands.at(0) + call_frames.back().bp;
                     value_stack.push_back(value_stack.at(index));
                     break;
                 }
 
                 case opcode::SET_LOCAL: {
-                    u32 index = current.a + call_frames.back().bp;
+                    u32 index = current.operands.at(0) + call_frames.back().bp;
                     value_stack.at(index) = value_stack.back();
                     break;
                 }
 
                 case opcode::BRANCH_FALSE: {
-                    u32 increment = current.a;
+                    u32 increment = current.operands.at(0);
                     if (!value_stack.back().byte()) {
                         *pc += increment;
                     }
@@ -259,13 +259,13 @@ struct vmachine {
                 }
 
                 case opcode::BRANCH: {
-                    u32 increment = current.a;
+                    u32 increment = current.operands.at(0);
                     *pc += increment;
                     break;
                 }
 
                 case opcode::LOOP: {
-                    u32 increment = current.a;
+                    u32 increment = current.operands.at(0);
                     *pc -= increment;
                     break;
                 }
