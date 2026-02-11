@@ -89,6 +89,12 @@ public:
         return _data[_size - 1];
     }
 
+    T& back(u64 from_top) const {
+        panic_if(_size <= 0, "dynarray::back(u64 from_top): cannot get back of array of size 0");
+        panic_if(_size <= from_top, "dynarray::back(u64 from_top): from_top too large");
+        return _data[_size - from_top - 1];
+    }
+
     template<typename U>
     friend std::ostream& operator<<(std::ostream& os, const dynarray<U>& other);
 
