@@ -51,7 +51,7 @@ u32 function::load_constant(const value& val) {
 
 object *function::clone() const {
     object *func = new function(*this);
-    object_list.push_back(func); // ew!
+    object_list.push_back(func);
     return func;
 }
 

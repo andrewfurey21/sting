@@ -65,7 +65,7 @@ string& string::operator=(string&& other) {
 
 object* string::clone() const {
     object *str = new string(*this);
-    object_list.push_back(str); // for basic garbage collection
+    object_list.push_back(str);
     return str;
 }
 

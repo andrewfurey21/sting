@@ -48,7 +48,7 @@ value native_function::call(const dynarray<value>& args) {
 
 object *native_function::clone() const {
     object *func = new native_function(*this);
-    object_list.push_back(func); // ew!
+    object_list.push_back(func);
     return func;
 }
 
