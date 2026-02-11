@@ -21,6 +21,7 @@ public:
     value(f32 f);
     value(u8 b);
     value(object const* o, vtype t);
+    // TODO: implement copy+move.
     ~value();
 
     value operator+(const value& other) const;

@@ -159,7 +159,6 @@ void parser::fun_declaration() {
 
     consume(token_type::LEFT_BRACE, "Expected '{' after function declaration");
 
-    // c.functions.push_back(function(fname, arity));
     c.new_function(function(fname, arity));
     block();
 
@@ -281,11 +280,11 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         }
         consume(token_type::RIGHT_PAREN, "Expected ')' to end a function call.");
 
-        i64 local = c.resolve_local(fname);
-        if (local == -1) {
-            get_current_function().write_instruction(opcode::GET_GLOBAL, fnline, index);
-        } else {
+        i64 local = c.resolve_local(fname, c.locals());
+        if (local != -1) {
             get_current_function().write_instruction(opcode::GET_LOCAL, fnline, local);
+        } else {
+            get_current_function().write_instruction(opcode::GET_GLOBAL, fnline, index);
         }
 
         get_current_function().write_instruction(opcode::CALL, fnline, num_args);
@@ -293,24 +292,24 @@ void parser::named_variable(const token& tok_name, bool assignable) {
     } else if (current->type == token_type::EQUAL) {
         panic_if(!assignable, "Cannot assign to this expression");
 
-        i64 local = c.resolve_local(*prev);
-        if (local == -1) {
+        i64 local = c.resolve_local(*prev, c.locals());
+        if (local != -1) {
+            get_next_token();
+            expression();
+            get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
+        } else {
             u64 index = parse_variable_name();
             get_next_token();
             expression();
             get_current_function().write_instruction(opcode::SET_GLOBAL, prev->line, index);
-        } else {
-            get_next_token();
-            expression();
-            get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
         }
     } else {
-        i64 local = c.resolve_local(*prev);
-        if (local == -1) {
+        i64 local = c.resolve_local(*prev, c.locals());
+        if (local != -1) {
+            get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
+        } else {
             u64 index = parse_variable_name();
             get_current_function().write_instruction(opcode::GET_GLOBAL, prev->line, index);
-        } else {
-            get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
         }
     }
 }

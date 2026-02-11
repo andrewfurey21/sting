@@ -1,16 +1,8 @@
-
-fun function() {
-    fun nested() {
-    	fun nested_nested() {
-	    var x = 10;
-	    return x * x;
-	}
-	return nested_nested;
+{
+    var x = 10;
+    fun function() {
+        print x;
     }
-    return nested;
+
+    function();
 }
-
-var nested = function();
-var nested_nested = nested();
-
-print nested_nested();

@@ -20,7 +20,7 @@ enum class vm_result { // just result?
 };
 
 struct call_frame {
-    function f; // function bytecode should be static during runtime.
+    function f;
     u64 pc;
     u64 bp; // base pointer of function call on value_stack
     // bp is the first value not accessible by the function call.
