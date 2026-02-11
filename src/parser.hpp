@@ -40,23 +40,20 @@ struct local {
 
 // in the book its a stack of compilers.
 struct compiler {
+    // each function tracks a stack of locals and upvalues
+    dynarray<function> functions;
+    dynarray<dynarray<local>> _locals;
+    i64 scope_depth;
+
     compiler() : functions(), scope_depth(0), _locals() {
         functions.push_back(function("script", 0));
     }
-    dynarray<function> functions;
-    i64 scope_depth;
 
-    // kind of like simulating stack but at compile time
-    // get correct location of local on the stack.
-    // all locals in the current scope get popped off when going out of scope.
-    // back through the stack and find first one with same token.
-    dynarray<dynarray<local>> _locals;
-
-    i64 resolve_local(const token& t) {
+    i64 resolve_local(const token& t, const dynarray<local>& locals) {
         if (scope_depth == 0) return -1;
-        for (i64 i{static_cast<i64>(locals().size()) - 1l}; i >= 0; i--) {
-            if (locals().at(i).name == t) {
-                panic_if(locals().at(i).depth == -1,
+        for (i64 i{static_cast<i64>(locals.size()) - 1l}; i >= 0; i--) {
+            if (locals.at(i).name == t) {
+                panic_if(locals.at(i).depth == -1,
                         "Cannot define local with itself.");
                 return i;
             }
@@ -74,10 +71,6 @@ struct compiler {
     function finish_function() {
         panic_if(_locals.pop_back().size() > 0, "Stack is not zero, missed pop somewhere");
         return functions.pop_back();
-    }
-
-    ~compiler() {
-        // std::cout << "functions size: " << functions.size() << "\n" << std::flush;
     }
 };
 
