@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -Isrc -std=c++17 -g -O0
-ASAN = # -fsanitize=address
+ASAN = -fsanitize=address
 
 SRC_DIR = src
 BUILD_DIR = build

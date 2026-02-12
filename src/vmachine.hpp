@@ -10,6 +10,7 @@
 #include "chunk.hpp"
 #include "function.hpp"
 #include "native_function.hpp"
+#include "closure.hpp"
 
 namespace sting {
 
@@ -20,13 +21,13 @@ enum class vm_result { // just result?
 };
 
 struct call_frame {
-    function f;
+    closure c;
     u64 pc;
     u64 bp; // base pointer of function call on value_stack
     // bp is the first value not accessible by the function call.
 
-    call_frame(const function& func, u64 bp = 0) : f(func), bp(bp), pc(0) {}
-    call_frame(const call_frame& other) : f(other.f), bp(other.bp), pc(other.pc) {}
+    call_frame(const closure& c, u64 bp = 0) : c(c), bp(bp), pc(0) {}
+    call_frame(const call_frame& other) : c(other.c), bp(other.bp), pc(other.pc) {}
 };
 
 struct vmachine {
@@ -37,10 +38,10 @@ struct vmachine {
 
     void call(const value& callable, const u64 num_args) {
         switch (callable.type) {
-            case vtype::FUNCTION: {
-                function f = *static_cast<function*>(callable.obj());
-                panic_if(f.get_arity() != num_args, "Wrong number of args to function call");
-                call_frame frame(f, value_stack.size() - f.get_arity());
+            case vtype::CLOSURE: {
+                closure c = *static_cast<closure*>(callable.obj());
+                panic_if(c.get_arity() != num_args, "Wrong number of args to function call");
+                call_frame frame(c, value_stack.size() - c.get_arity());
                 call_frames.push_back(frame);
                 break;
             }
@@ -65,7 +66,7 @@ struct vmachine {
     vm_result run_chunk() {
         for (;;) {
             u64 *const pc = &call_frames.back().pc;
-            instruction const& current = call_frames.back().f.get_chunk().bytecode.at(*pc);
+            instruction const& current = call_frames.back().c.get_chunk().bytecode.at(*pc);
             call_frames.back().pc++;
 
             switch(current.op) {
@@ -95,6 +96,17 @@ struct vmachine {
                     const value& callable = value_stack.pop_back();
                     const vtype type = callable.type;
                     call(callable, num_args);
+                    break;
+                }
+
+                case opcode::MAKE_CLOSURE: {
+                    const value& v = value_stack.pop_back();
+                    const vtype type = v.type;
+                    panic_if(type != vtype::FUNCTION, "Cannot make closure from non-function");
+                    const function f = *static_cast<function*>(v.obj());
+                    const closure c = closure(f);
+                    const value cv = value(static_cast<object*>(c.clone()), vtype::CLOSURE);
+                    value_stack.push_back(cv);
                     break;
                 }
 
@@ -279,10 +291,10 @@ struct vmachine {
         }
     }
 
-    chunk& get_current_chunk() { return call_frames.back().f.get_chunk(); }
+    chunk& get_current_chunk() { return call_frames.back().c.get_chunk(); }
 
     const chunk& script() {
-        return call_frames.at(0).f.get_chunk();
+        return call_frames.at(0).c.get_chunk();
     }
 
     dynarray<call_frame> call_frames;

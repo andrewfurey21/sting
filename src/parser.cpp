@@ -185,6 +185,7 @@ void parser::fun_declaration() {
 
     u64 findex = get_current_function().load_constant(fv);
     get_current_function().write_instruction(opcode::LOAD_CONST, fn_line, findex);
+    get_current_function().write_instruction(opcode::MAKE_CLOSURE, fn_line);
     if (c.scope_depth == 0) {
         get_current_function().write_instruction(opcode::DEFINE_GLOBAL, prev->line, name_index);
     } else {

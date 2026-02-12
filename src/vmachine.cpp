@@ -56,6 +56,8 @@ std::string opcode_to_string(opcode op) {
             return "LOOP";
         case opcode::CALL:
             return "CALL";
+        case opcode::MAKE_CLOSURE:
+            return "MAKE CLOSURE";
         default:
             return "WARNING: UNKNOWN OPCODE";
     }

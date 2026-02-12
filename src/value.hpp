@@ -13,6 +13,7 @@ enum class vtype {
     STRING,
     FUNCTION,
     NATIVE_FUNCTION,
+    CLOSURE,
 };
 
 class value {

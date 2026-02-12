@@ -15,9 +15,12 @@ public:
     closure& operator=(const closure& other);
     closure& operator=(closure&& other);
 
-    function& get_function() { return f; }
+    // function& get_function() { return f; }
     object *clone() const override;
     u8 *cstr() const override;
+
+    u64& get_arity() { return f.get_arity(); }
+    chunk& get_chunk() { return f.get_chunk(); }
 
     friend std::ostream& operator<<(std::ostream& os, const closure& c);
 private:

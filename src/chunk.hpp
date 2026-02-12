@@ -35,11 +35,12 @@ enum class opcode {
     BRANCH,
     LOOP, // just branch but backwards
     CALL,
+    MAKE_CLOSURE,
 };
 
 std::string opcode_to_string(opcode op);
 
-// when rewriting, needs to be a stream of bytes.
+// when rewriting, needs to be a stream of bytes. instructions can be variable length.
 struct instruction {
     opcode op;
     dynarray<u32> operands;
