@@ -102,6 +102,7 @@ public:
     void declare_local_variable();
     void variable(bool assignable);
     u64 parse_variable_name();
+    u64 parse_global_variable_name();
     void named_variable(const token& name, bool assignable);
     void block();
     void return_statement();

@@ -1,12 +1,3 @@
-// {
-//     var x = 10;
-//     fun function() {
-//         print x;
-//     }
-// 
-//     function();
-// }
-
 fun print_primes_up_to(max) {
     var i = 2;
     while (i <= max) {
@@ -14,17 +5,16 @@ fun print_primes_up_to(max) {
         var is_prime = true;
         var factor = 0;
         while (start < i and is_prime) {
-            var result = i;
-    	    while (result > 0) {
-    	        result = result - start;
-    	    }
-    	    if (result + 0.0001 > 0) {
-    	        is_prime = false;
-    	        factor = start;
-    	    }
-    	    start = start + 1;
+        	var result = i;
+    	while (result > 0) {
+    	    result = result - start;
+    	}
+    	if (result + 0.0001 > 0) {
+    	    is_prime = false;
+    	    factor = start;
+    	}
+    	start = start + 1;
         }
-
         if (is_prime) {
             print i;
         }
@@ -32,10 +22,14 @@ fun print_primes_up_to(max) {
     }
 }
 
-var start = clock();
-print_primes_up_to(30);
-var end = clock();
+fun time_primes(max) {
+    var start = clock();
+    print_primes_up_to(max);
+    var end = clock();
+    print "Finished program in (seconds): ";
+    print (end - start) / 1000;
+}
 
-print "Finished program in (seconds): ";
-print (end - start) / 1000;
-
+var p = 100;
+time_primes(p);
+// print_primes_up_to(p);

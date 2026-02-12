@@ -125,7 +125,6 @@ void parser::declare_function_param() {
     for (u64 i = c.locals().size(); i > 0; i--) {
         const local& current_local = c.locals().at(i - 1);
         if (c.scope_depth > current_local.depth) break;
-        // if (c.scope_depth != current_local.depth) break;
         panic_if(current_local.name == l.name, "Cannot have parameters with the same name.");
     }
 
@@ -136,12 +135,12 @@ void parser::fun_declaration() {
     get_next_token();
     consume(token_type::IDENTIFIER, "Expected function name");
 
-    u64 name_index = parse_variable_name();
+    const u64 name_index = parse_variable_name();
+    declare_local_variable();
 
     const string& fname =
         *static_cast<string*>(get_current_function().get_chunk().constant_pool.at(name_index).obj());
     c.new_function(function(fname, 0));
-    declare_local_variable();
 
     const u64 fn_line = prev->line;
     c.scope_depth++;
@@ -195,9 +194,9 @@ void parser::fun_declaration() {
 
 // add local variable to list of variables in given scope.
 void parser::declare_local_variable() {
-    if (c.scope_depth == 0) return; // TODO: move this outside
+    if (c.scope_depth == 0) return;
 
-    local l = {
+    const local l = {
         .name = *prev,
         .depth = -1,
     };
@@ -219,6 +218,12 @@ u64 parser::parse_variable_name() {
     string name(prev->start, prev->length);
     value v(&name, vtype::STRING);
     return get_current_function().load_constant(v);
+}
+
+u64 parser::parse_global_variable_name() {
+    string name(prev->start, prev->length);
+    value v(&name, vtype::STRING);
+    return c.functions.at(0).load_constant(v);
 }
 
 void parser::var_declaration() {
@@ -260,9 +265,11 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         // only checking globals, because closures not implemented yet.
         token fname = *prev;
         u64 fnline = current->line;
+        i64 local = c.resolve_local(fname, c.locals());
+
         u64 index = 0;
-        if (c.scope_depth == 0) {
-            index = parse_variable_name();
+        if (local == -1) {
+            index = parse_global_variable_name();
         }
 
         get_next_token();
@@ -281,7 +288,6 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         }
         consume(token_type::RIGHT_PAREN, "Expected ')' to end a function call.");
 
-        i64 local = c.resolve_local(fname, c.locals());
         if (local != -1) {
             get_current_function().write_instruction(opcode::GET_LOCAL, fnline, local);
         } else {
@@ -299,7 +305,7 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             expression();
             get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
         } else {
-            u64 index = parse_variable_name();
+            u64 index = parse_global_variable_name();
             get_next_token();
             expression();
             get_current_function().write_instruction(opcode::SET_GLOBAL, prev->line, index);
@@ -309,7 +315,7 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         if (local != -1) {
             get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
         } else {
-            u64 index = parse_variable_name();
+            u64 index = parse_global_variable_name();
             get_current_function().write_instruction(opcode::GET_GLOBAL, prev->line, index);
         }
     }

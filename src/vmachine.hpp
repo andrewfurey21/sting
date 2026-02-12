@@ -35,8 +35,8 @@ struct vmachine {
         call_frames.push_back(cf);
     }
 
-    void call(const value& callable, const vtype& type, const u64 num_args) {
-        switch (type) {
+    void call(const value& callable, const u64 num_args) {
+        switch (callable.type) {
             case vtype::FUNCTION: {
                 function f = *static_cast<function*>(callable.obj());
                 panic_if(f.get_arity() != num_args, "Wrong number of args to function call");
@@ -57,7 +57,7 @@ struct vmachine {
                 break;
             }
             default: {
-                panic("Cannot call");
+                panic("Cannot call non-callable object.");
             }
         }
     }
@@ -94,7 +94,7 @@ struct vmachine {
                     const u64 num_args = current.operands.at(0);
                     const value& callable = value_stack.pop_back();
                     const vtype type = callable.type;
-                    call(callable, type, num_args);
+                    call(callable, num_args);
                     break;
                 }
 
@@ -207,7 +207,7 @@ struct vmachine {
 
                 case opcode::DEFINE_GLOBAL: {
                     u32 index = current.operands.at(0);
-                    const value& v = get_current_chunk().constant_pool.at(index);
+                    const value& v = script().constant_pool.at(index);
                     const string *name = static_cast<string*>(v.obj());
                     // this looks really bad but guaranteed to be a string.
                     panic_if(globals.contains(*name), "Already defined global");
@@ -218,7 +218,7 @@ struct vmachine {
                 case opcode::GET_GLOBAL: {
                     u32 index = current.operands.at(0);
 
-                    const value& v = get_current_chunk().constant_pool.at(index);
+                    const value& v = script().constant_pool.at(index);
                     const string *name = static_cast<string*>(v.obj());
 
                     panic_if(!globals.contains(*name), "Cannot get undefined global");
@@ -229,7 +229,7 @@ struct vmachine {
 
                 case opcode::SET_GLOBAL: {
                     u32 index = current.operands.at(0);
-                    const value& v = get_current_chunk().constant_pool.at(index);
+                    const value& v = script().constant_pool.at(index);
                     const string *name =static_cast<string*>(v.obj());
                     panic_if(!globals.contains(*name), "Cannot set undefined global");
 
