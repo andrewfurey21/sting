@@ -1,13 +1,12 @@
 {
+    var x = 9;
     fun f() {
-    	var x = 10;
+    	x = x + 1;
         print x;
     }
 
     var y = f;
     var z = f;
-
-    // x = x + 1;
 
     y();
     z();

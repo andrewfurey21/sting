@@ -38,11 +38,20 @@ struct local {
     }
 };
 
+struct upvalue {
+    i64 index;
+    bool local;
+
+    upvalue(u64 index, bool local) : index(index), local(local) {}
+    bool operator==(const upvalue& other)  { return index == other.index && local == other.local; }
+};
+
 // in the book its a stack of compilers.
 struct compiler {
     // each function tracks a stack of locals and upvalues
     dynarray<function> functions;
     dynarray<dynarray<local>> _locals;
+    dynarray<dynarray<upvalue>> _upvalues;
     i64 scope_depth;
 
     compiler() : functions(), scope_depth(0), _locals() {
@@ -61,9 +70,32 @@ struct compiler {
         return -1;
     }
 
+    i64 add_upvalue(dynarray<upvalue>& upvalues, u64 index, bool local) {
+        for (u64 i = 0; i < upvalues.size(); i++) {
+            if (upvalues.at(i) == upvalue(index, local)) return i;
+        }
+        upvalues.push_back(upvalue(index, local));
+        return upvalues.size() - 1;
+    }
+
+    i64 resolve_upvalue(const token& t) {
+        return resolve_upvalue(t, _locals.size() - 1);
+    }
+
+    i64 resolve_upvalue(const token& t, const u64 depth) {
+        if (depth == 0ull) return -1;
+        const i64 l = resolve_local(t, _locals.at(depth - 1));
+        if (l != -1) return add_upvalue(_upvalues.at(depth), l, true);
+
+        const i64 u = resolve_upvalue(t, depth - 1);
+        if (u != -1) return add_upvalue(_upvalues.at(depth), u, false);
+        else return -1;
+    }
+
     void new_function(const function& f) {
         functions.push_back(f);
         _locals.push_back(dynarray<local>());
+        _upvalues.push_back(dynarray<upvalue>()); // not needed for script though...
     }
 
     dynarray<local>& locals() { return _locals.back(); }

@@ -270,6 +270,10 @@ void parser::named_variable(const token& tok_name, bool assignable) {
 
         u64 index = 0;
         if (local == -1) {
+            local = c.resolve_upvalue(fname);
+        }
+
+        if (local == -1) {
             index = parse_global_variable_name();
         }
 
@@ -305,6 +309,8 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             get_next_token();
             expression();
             get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
+        } else if ((local = c.resolve_upvalue(*prev)) != -1) {
+            std::cout << "set upvalue not implemented\n";
         } else {
             u64 index = parse_global_variable_name();
             get_next_token();
@@ -315,7 +321,9 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         i64 local = c.resolve_local(*prev, c.locals());
         if (local != -1) {
             get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
-        } else {
+        } else if ((local = c.resolve_upvalue(*prev)) != -1) {
+            std::cout << "get upvalue not implemented\n";
+        }else {
             u64 index = parse_global_variable_name();
             get_current_function().write_instruction(opcode::GET_GLOBAL, prev->line, index);
         }

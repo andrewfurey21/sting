@@ -7,14 +7,10 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
-#include <functional>
-#include <initializer_list>
-#include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <filesystem>
 #include <string>
-#include <type_traits>
 
 using u64 = uint64_t;
 using u32 = uint32_t;
