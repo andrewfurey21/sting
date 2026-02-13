@@ -101,7 +101,7 @@ public:
 private:
 
     T* allocate(u64 capacity) {
-        T* d = static_cast<T*>(malloc(sizeof(T) * _capacity));
+        T* d = static_cast<T*>(calloc(capacity, sizeof(T)));
         return d;
     }
 
