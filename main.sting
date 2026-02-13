@@ -1,13 +1,26 @@
-{
-    var x = 9;
-    fun f() {
-    	x = x + 1;
-        print x;
+// {
+//     var x = 9;
+//     fun f() {
+//     	x = x + 1;
+//         print x;
+//     }
+// 
+//     var y = f;
+//     var z = f;
+// 
+//     y();
+//     z();
+// }
+
+fun outer() {
+  var a = 1;
+  var b = 2;
+  fun middle() {
+    var c = 3;
+    var d = 4;
+    fun inner() {
+      print a + c + b + d;
     }
-
-    var y = f;
-    var z = f;
-
-    y();
-    z();
+  }
 }
+

@@ -15,16 +15,30 @@ public:
     closure& operator=(const closure& other);
     closure& operator=(closure&& other);
 
-    // function& get_function() { return f; }
     object *clone() const override;
     u8 *cstr() const override;
 
     u64& get_arity() { return f.get_arity(); }
     chunk& get_chunk() { return f.get_chunk(); }
-
     friend std::ostream& operator<<(std::ostream& os, const closure& c);
 private:
     function f;
+};
+
+class rtupvalue: public object {
+public:
+    rtupvalue();
+    rtupvalue(const rtupvalue& other);
+    rtupvalue(rtupvalue&& other);
+    rtupvalue& operator=(const rtupvalue& other);
+    rtupvalue& operator=(rtupvalue&& other);
+    ~rtupvalue();
+
+    object *clone() const override;
+    u8 *cstr() const override;
+    friend std::ostream& operator<<(std::ostream& os, const rtupvalue& c);
+private:
+    value *_data; // TODO: custom shared pointer?
 };
 
 } // namespace sting

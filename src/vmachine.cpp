@@ -58,6 +58,10 @@ std::string opcode_to_string(opcode op) {
             return "CALL";
         case opcode::MAKE_CLOSURE:
             return "MAKE CLOSURE";
+        case opcode::GET_UPVALUE:
+            return "GET UPVALUE";
+        case opcode::SET_UPVALUE:
+            return "SET UPVALUE";
         default:
             return "WARNING: UNKNOWN OPCODE";
     }

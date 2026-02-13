@@ -16,6 +16,8 @@ enum class vtype {
     CLOSURE,
 };
 
+// TODO: shouldn't this be an object too? for gc.
+// or could implement custom new.
 class value {
 public:
     value();
@@ -41,15 +43,14 @@ public:
 
     vtype type;
 
-private:
-    union { // should really just be one (shared) object pointer.
-        f32 f;
-        u8 b;
-        object* o; // should probably be a shared pointer
-    };
-
     friend void check_type(const value& a, const value& b);
     friend std::ostream& operator<<(std::ostream& os, const value& v);
+private:
+    union {
+        f32 f;
+        u8 b;
+        object* o; // shared pointer?
+    };
 };
 
 

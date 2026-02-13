@@ -185,7 +185,13 @@ void parser::fun_declaration() {
 
     u64 findex = get_current_function().load_constant(fv);
     get_current_function().write_instruction(opcode::LOAD_CONST, fn_line, findex);
-    get_current_function().write_instruction(opcode::MAKE_CLOSURE, fn_line);
+
+    dynarray<u32> operands;
+    for (u64 i = 0; i < c.upvalues().size(); i++) {
+        operands.push_back(c.upvalues().at(i).local);
+        operands.push_back(c.upvalues().at(i).index);
+    }
+    get_current_function().write_instruction(opcode::MAKE_CLOSURE, fn_line, operands);
     if (c.scope_depth == 0) {
         get_current_function().write_instruction(opcode::DEFINE_GLOBAL, prev->line, name_index);
     } else {
@@ -263,7 +269,6 @@ void parser::variable(bool assignable) {
 void parser::named_variable(const token& tok_name, bool assignable) {
     // function call else assignment else get.
     if (current->type == token_type::LEFT_PAREN) {
-        // only checking globals, because closures not implemented yet.
         token fname = *prev;
         u64 fnline = current->line;
         i64 local = c.resolve_local(fname, c.locals());

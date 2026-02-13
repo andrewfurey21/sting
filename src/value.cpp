@@ -24,7 +24,7 @@ value::value(object const* o, vtype t) {
 }
 
 value::~value() {
-    // shouldn't we free this->o
+    // this->o gets added to object_list via clone.
 }
 
 value value::operator+(const value& other) const {
@@ -149,7 +149,8 @@ std::ostream& operator<<(std::ostream& os, const value& v) {
         }
         case vtype::STRING:
         case vtype::NATIVE_FUNCTION:
-        case vtype::FUNCTION: {
+        case vtype::FUNCTION:
+        case vtype::CLOSURE: {
             u8* s = v.o->cstr();
             os << s;
             free(s);

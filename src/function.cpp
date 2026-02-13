@@ -45,6 +45,10 @@ void function::write_instruction(const opcode op, u64 line, u32 a) {
     chk.write_instruction(op, line, a);
 }
 
+void function::write_instruction(const opcode op, u64 line, const dynarray<u32>& operands) {
+    chk.write_instruction(op, line, operands);
+}
+
 u32 function::load_constant(const value& val) {
     return chk.load_constant(val);
 }

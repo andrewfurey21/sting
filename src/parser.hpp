@@ -99,9 +99,11 @@ struct compiler {
     }
 
     dynarray<local>& locals() { return _locals.back(); }
+    dynarray<upvalue>& upvalues() { return _upvalues.back(); }
 
     function finish_function() {
         panic_if(_locals.pop_back().size() > 0, "Stack is not zero, missed pop somewhere");
+        panic_if(_upvalues.pop_back().size() > 0, "Stack is not zero, missed pop somewhere");
         return functions.pop_back();
     }
 };

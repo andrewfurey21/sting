@@ -36,6 +36,8 @@ enum class opcode {
     LOOP, // just branch but backwards
     CALL,
     MAKE_CLOSURE,
+    GET_UPVALUE,
+    SET_UPVALUE,
 };
 
 std::string opcode_to_string(opcode op);
@@ -64,6 +66,15 @@ struct chunk {
             .operands = dynarray<u32>({ a }),
         };
 
+        lines.push_back(line);
+        bytecode.push_back(instr);
+    }
+
+    void write_instruction(const opcode op, u64 line, const dynarray<u32>& operands) {
+        instruction instr = {
+            .op = op,
+            .operands = operands,
+        };
         lines.push_back(line);
         bytecode.push_back(instr);
     }

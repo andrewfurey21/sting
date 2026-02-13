@@ -19,6 +19,7 @@ public:
     chunk& get_chunk() { return chk; }
     u64& get_arity() { return arity; }
     void write_instruction(const opcode op, u64 line, u32 a = 0);
+    void write_instruction(const opcode op, u64 line, const dynarray<u32>& operands);
     u32 load_constant(const value& val);
     object *clone() const override;
     u8 *cstr() const override;
