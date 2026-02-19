@@ -18,7 +18,7 @@ enum class vtype {
 
 // TODO: shouldn't this be an object too? for gc.
 // or could implement custom new.
-class value {
+class value : public object {
 public:
     value();
     value(f32 f);
@@ -41,8 +41,12 @@ public:
     u8 byte() const { return b; }
     object* obj() const { return o; }
 
-    // u8 * cstr() const override { return NULL; }
-    // object * clone () const override { return NULL; }
+    u8 * cstr() const override { return strdup("<value>"); }
+    object * clone () const override {
+        object * v = new value(*this);
+        object_list.push_back(v);
+        return v;
+    }
 
     vtype type;
 
