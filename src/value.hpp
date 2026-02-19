@@ -41,6 +41,9 @@ public:
     u8 byte() const { return b; }
     object* obj() const { return o; }
 
+    // u8 * cstr() const override { return NULL; }
+    // object * clone () const override { return NULL; }
+
     vtype type;
 
     friend void check_type(const value& a, const value& b);

@@ -6,6 +6,27 @@
 
 namespace sting {
 
+// rtupvalues are placed on heap. so no good to call constructors directly, just use new_rtupvalue
+class rtupvalue: public object {
+public:
+    rtupvalue();
+    rtupvalue(value * const v);
+    rtupvalue(const rtupvalue& other);
+    rtupvalue(rtupvalue&& other);
+    rtupvalue& operator=(const rtupvalue& other);
+    rtupvalue& operator=(rtupvalue&& other);
+    ~rtupvalue();
+
+    object *clone() const override;
+    u8 *cstr() const override;
+    friend std::ostream& operator<<(std::ostream& os, const rtupvalue& c);
+    static rtupvalue *new_upvalue(value * const v);
+    value * data() { return _data; }
+private:
+    // points to somewhere on stack or object_list when the get closed
+    value *_data; // NOTE: _data not owned by upvalue.
+};
+
 class closure : public object {
 public:
     closure();
@@ -20,27 +41,14 @@ public:
 
     u64& get_arity() { return f.get_arity(); }
     chunk& get_chunk() { return f.get_chunk(); }
+    dynarray<rtupvalue*>& get_upvalues() { return _upvalues; }
+
     friend std::ostream& operator<<(std::ostream& os, const closure& c);
 private:
     function f;
+    dynarray<rtupvalue*> _upvalues;
+    // NOTE: upvalues not owned by closure. tempted to make them const.
 };
-
-class rtupvalue: public object {
-public:
-    rtupvalue();
-    rtupvalue(const rtupvalue& other);
-    rtupvalue(rtupvalue&& other);
-    rtupvalue& operator=(const rtupvalue& other);
-    rtupvalue& operator=(rtupvalue&& other);
-    ~rtupvalue();
-
-    object *clone() const override;
-    u8 *cstr() const override;
-    friend std::ostream& operator<<(std::ostream& os, const rtupvalue& c);
-private:
-    value *_data; // TODO: custom shared pointer?
-};
-
 } // namespace sting
 
 #endif

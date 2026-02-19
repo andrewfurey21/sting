@@ -14,6 +14,7 @@ public:
     virtual ~object() = default;
 };
 
+// make a memory arena?
 extern dynarray<object*> object_list;
 
 } // namespace sting

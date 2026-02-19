@@ -63,6 +63,10 @@ struct vmachine {
         }
     }
 
+    rtupvalue * capture_value(value * const v) {
+        return rtupvalue::new_upvalue(v);
+    }
+
     vm_result run_chunk() {
         for (;;) {
             u64 *const pc = &call_frames.back().pc;
@@ -104,7 +108,30 @@ struct vmachine {
                     const vtype type = v.type;
                     panic_if(type != vtype::FUNCTION, "Cannot make closure from non-function");
                     const function f = *static_cast<function*>(v.obj());
-                    const closure c = closure(f);
+                    closure c = closure(f);
+                    const u64 num_upvalues = current.operands.at(0);
+                    panic_if((num_upvalues != (current.operands.size() - 1) / 2) &&
+                             (current.operands.size() % 2 == 1),
+                             "num_upvalues does not match number of upvalues passed to MAKE_CLOSURE");
+
+                    dynarray<rtupvalue*>& uv = c.get_upvalues();
+                    const u64 bp = call_frames.back().bp;
+                    for (u64 i{}; i < num_upvalues; i++) {
+                        const u32 local = current.operands.at(i + 1);
+                        const u32 index = current.operands.at(i + 2);
+                        if (local) {
+                            // there is no upvalue for this local, so call capture_value
+                            // makes a new upvalue and puts it in the current closure.
+                            const u32 value_stack_index = index + bp;
+                            uv.push_back(capture_value(&value_stack.at(value_stack_index)));
+                        } else {
+                            // the current frame is guaranteed to have an upvalue pointing
+                            // to the data. if it doesn't exist, the compiler or runtime is broken somewhere.
+                            dynarray<rtupvalue*>& prev_uv = call_frames.back().c.get_upvalues();
+                            uv.push_back(prev_uv.at(index));
+                            // isn't its location in the upvalues array the index?
+                        }
+                    }
                     const value cv = value(static_cast<object*>(c.clone()), vtype::CLOSURE);
                     value_stack.push_back(cv);
                     break;
@@ -251,13 +278,13 @@ struct vmachine {
                 }
 
                 case opcode::GET_LOCAL: {
-                    u32 index = current.operands.at(0) + call_frames.back().bp;
+                    const u32 index = current.operands.at(0) + call_frames.back().bp;
                     value_stack.push_back(value_stack.at(index));
                     break;
                 }
 
                 case opcode::SET_LOCAL: {
-                    u32 index = current.operands.at(0) + call_frames.back().bp;
+                    const u32 index = current.operands.at(0) + call_frames.back().bp;
                     value_stack.at(index) = value_stack.back();
                     break;
                 }
@@ -279,6 +306,18 @@ struct vmachine {
                 case opcode::LOOP: {
                     u32 increment = current.operands.at(0);
                     *pc -= increment;
+                    break;
+                }
+
+                case opcode::GET_UPVALUE: {
+                    const u32 upvalue_index = current.operands.at(0);
+                    value_stack.push_back(*call_frames.back().c.get_upvalues().at(upvalue_index)->data());
+                    break;
+                }
+
+                case opcode::SET_UPVALUE: {
+                    const u32 upvalue_index = current.operands.at(0);
+                    *call_frames.back().c.get_upvalues().at(upvalue_index)->data() = value_stack.back();
                     break;
                 }
 

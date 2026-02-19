@@ -165,6 +165,7 @@ void parser::fun_declaration() {
     consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
 
     const dynarray<instruction>& bc = c.functions.back().get_chunk().bytecode;
+    // TODO: might not always work, fun f() { if (x < 5) { return } };
     if (bc.size() == 0 || bc.back().op != opcode::RETURN) {
         c.functions.back().write_instruction(opcode::NIL, fn_line);
         c.functions.back().write_instruction(opcode::RETURN, fn_line);
@@ -187,6 +188,7 @@ void parser::fun_declaration() {
     get_current_function().write_instruction(opcode::LOAD_CONST, fn_line, findex);
 
     dynarray<u32> operands;
+    operands.push_back(c.upvalues().size());
     for (u64 i = 0; i < c.upvalues().size(); i++) {
         operands.push_back(c.upvalues().at(i).local);
         operands.push_back(c.upvalues().at(i).index);
@@ -197,6 +199,8 @@ void parser::fun_declaration() {
     } else {
         c.locals().back().depth = c.scope_depth;
     }
+
+    c.pop_upvalues();
 }
 
 // add local variable to list of variables in given scope.
@@ -272,14 +276,15 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         token fname = *prev;
         u64 fnline = current->line;
         i64 local = c.resolve_local(fname, c.locals());
+        u64 global = 0;
+        i64 upvalue = 0;
 
-        u64 index = 0;
         if (local == -1) {
-            local = c.resolve_upvalue(fname);
+            upvalue = c.resolve_upvalue(fname);
         }
 
-        if (local == -1) {
-            index = parse_global_variable_name();
+        if (upvalue == -1) {
+            global = parse_global_variable_name();
         }
 
         get_next_token();
@@ -300,8 +305,10 @@ void parser::named_variable(const token& tok_name, bool assignable) {
 
         if (local != -1) {
             get_current_function().write_instruction(opcode::GET_LOCAL, fnline, local);
+        } else if (upvalue != -1) {
+            get_current_function().write_instruction(opcode::GET_UPVALUE, fnline, upvalue);
         } else {
-            get_current_function().write_instruction(opcode::GET_GLOBAL, fnline, index);
+            get_current_function().write_instruction(opcode::GET_GLOBAL, fnline, global);
         }
 
         get_current_function().write_instruction(opcode::CALL, fnline, num_args);
@@ -310,27 +317,33 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         panic_if(!assignable, "Cannot assign to this expression");
 
         i64 local = c.resolve_local(*prev, c.locals());
+        i64 upvalue = 0;
         if (local != -1) {
             get_next_token();
             expression();
             get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
-        } else if ((local = c.resolve_upvalue(*prev)) != -1) {
-            std::cout << "set upvalue not implemented\n";
-        } else {
-            u64 index = parse_global_variable_name();
+        } else if ((upvalue = c.resolve_upvalue(*prev)) != -1) {
+            // sting::panic("set upvalue not implemented");
             get_next_token();
             expression();
-            get_current_function().write_instruction(opcode::SET_GLOBAL, prev->line, index);
+            get_current_function().write_instruction(opcode::SET_UPVALUE, prev->line, upvalue);
+        } else {
+            u64 global = parse_global_variable_name();
+            get_next_token();
+            expression();
+            get_current_function().write_instruction(opcode::SET_GLOBAL, prev->line, global);
         }
     } else {
         i64 local = c.resolve_local(*prev, c.locals());
+        i64 upvalue = 0;
         if (local != -1) {
             get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
-        } else if ((local = c.resolve_upvalue(*prev)) != -1) {
-            std::cout << "get upvalue not implemented\n";
+        } else if ((upvalue = c.resolve_upvalue(*prev)) != -1) {
+            // sting::panic("get upvalue not implemented");
+            get_current_function().write_instruction(opcode::GET_UPVALUE, prev->line, upvalue);
         }else {
-            u64 index = parse_global_variable_name();
-            get_current_function().write_instruction(opcode::GET_GLOBAL, prev->line, index);
+            u64 global = parse_global_variable_name();
+            get_current_function().write_instruction(opcode::GET_GLOBAL, prev->line, global);
         }
     }
 }
@@ -625,17 +638,17 @@ void parser::print() {
     get_current_function().write_instruction(opcode::PRINT, prev->line);
 }
 
-    // NONE       0
-    // ASSIGNMENT 1 =
-    // OR         2 or
-    // AND        3 and
-    // EQUALITY   4 == !=
-    // COMPARISON 5 < > <= >=
-    // TERM       6 + -
-    // FACTOR     7 * /
-    // UNARY      8 ! -
-    // CALL       9 . ()
-    // PRIMARY    10
+// NONE       0
+// ASSIGNMENT 1 =
+// OR         2 or
+// AND        3 and
+// EQUALITY   4 == !=
+// COMPARISON 5 < > <= >=
+// TERM       6 + -
+// FACTOR     7 * /
+// UNARY      8 ! -
+// CALL       9 . ()
+// PRIMARY    10
 parse_rule rules[] = { // order matters here, indexing with token_type
   // prefix, infix, precedence
   {&parser::grouping, nullptr, precedence::NONE}, // [LEFT PAREN]

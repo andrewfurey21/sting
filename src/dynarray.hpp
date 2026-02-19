@@ -72,7 +72,7 @@ public:
             _capacity *= 2;
             resize_array();
         }
-        new (_data + _size) T(x);
+        new (_data + _size) T(x); // calls copy constructor.
         _size++;
     }
 

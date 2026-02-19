@@ -22,6 +22,8 @@ using f64 = double;
 
 namespace sting {
 
+
+// maybe it should just take std::stringstream instead?
 inline void panic_if(bool expr, const std::string& msg, const i32 code = -1) {
     if (!expr) return;
     std::cerr << "---------------- ERROR ----------------\n" << "Code: "
