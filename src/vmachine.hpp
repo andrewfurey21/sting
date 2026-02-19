@@ -117,8 +117,8 @@ struct vmachine {
                     dynarray<rtupvalue*>& uv = c.get_upvalues();
                     const u64 bp = call_frames.back().bp;
                     for (u64 i{}; i < num_upvalues; i++) {
-                        const u32 local = current.operands.at(i + 1);
-                        const u32 index = current.operands.at(i + 2);
+                        const u32 local = current.operands.at(i * 2 + 1);
+                        const u32 index = current.operands.at(i * 2 + 2);
                         if (local) {
                             // there is no upvalue for this local, so call capture_value
                             // makes a new upvalue and puts it in the current closure.

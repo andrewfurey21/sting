@@ -253,12 +253,13 @@ void parser::var_declaration() {
         get_next_token();
         expression();
 
-        // fix the scope of the variable we just added
-        if (c.scope_depth > 0)
-            c.locals().back().depth = c.scope_depth;
     } else {
         get_current_function().write_instruction(opcode::NIL, current->line);
     }
+
+    // fix the scope of the variable we just added, for both NIL and EQUAL
+    if (c.scope_depth > 0)
+        c.locals().back().depth = c.scope_depth;
 
     if (c.scope_depth == 0) {
         get_current_function().write_instruction(opcode::DEFINE_GLOBAL, prev->line, index);
