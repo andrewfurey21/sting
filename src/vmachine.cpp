@@ -63,7 +63,11 @@ std::string opcode_to_string(opcode op) {
         case opcode::SET_UPVALUE:
             return "SET UPVALUE";
         case opcode::CLOSE_VALUE:
-            return "CLOES VALUE";
+            return "CLOSE VALUE";
+        case opcode::SAVE_VALUE:
+            return "SAVE VALUE";
+        case opcode::LOAD_VALUE:
+            return "LOAD VALUE";
         default:
             return "WARNING: UNKNOWN OPCODE";
     }

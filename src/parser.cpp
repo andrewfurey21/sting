@@ -165,7 +165,8 @@ void parser::fun_declaration() {
     consume(token_type::RIGHT_BRACE, "Expected '}' after function definition");
 
     const dynarray<instruction>& bc = c.functions.back().get_chunk().bytecode;
-    // TODO: might not always work, fun f() { if (x < 5) { return } };
+    // TODO: fun f() { if (x < 5) { return } };
+    // maybe always append this?
     if (bc.size() == 0 || bc.back().op != opcode::RETURN) {
         c.functions.back().write_instruction(opcode::NIL, fn_line);
         c.functions.back().write_instruction(opcode::RETURN, fn_line);
@@ -350,6 +351,8 @@ void parser::named_variable(const token& tok_name, bool assignable) {
 }
 
 void parser::return_statement() {
+    panic_if(c.scope_depth == 0, "Cannot return from script");
+
     get_next_token();
     if (current->type != token_type::SEMICOLON) {
         expression();
@@ -357,6 +360,9 @@ void parser::return_statement() {
         get_current_function().write_instruction(opcode::NIL, prev->line);
     }
     consume(token_type::SEMICOLON, "Expected ';' after return expression");
+    get_current_function().write_instruction(opcode::SAVE_VALUE, prev->line);
+    fix_block_stack();
+    get_current_function().write_instruction(opcode::LOAD_VALUE, prev->line);
     get_current_function().write_instruction(opcode::RETURN, prev->line);
 }
 
@@ -374,18 +380,6 @@ void parser::statement() {
         consume(token_type::LEFT_BRACE, "Expected '{' after block");
         block();
         consume(token_type::RIGHT_BRACE, "Expected '}' after block");
-
-        // u32 count = 0;
-        while (c.locals().size() > 0 && c.locals().back().depth == c.scope_depth) {
-            // count++;
-            if (c.locals().back().captured) {
-                get_current_function().write_instruction(opcode::CLOSE_VALUE, prev->line, c.locals().size() - 1);
-            } else {
-                get_current_function().write_instruction(opcode::POP, prev->line);
-            }
-            c.locals().pop_back();
-        }
-
         c.scope_depth--;
     } else if (current->type == token_type::RETURN) {
         return_statement();
@@ -484,10 +478,21 @@ void parser::if_statement() {
     get_current_function().write_instruction(opcode::POP, prev->line);
 }
 
+void parser::fix_block_stack() {
+    while (c.locals().size() > 0 && c.locals().back().depth == c.scope_depth) {
+        if (c.locals().pop_back().captured) {
+            get_current_function().write_instruction(opcode::CLOSE_VALUE, prev->line, c.locals().size());
+        } else {
+            get_current_function().write_instruction(opcode::POP, prev->line);
+        }
+    }
+}
+
 void parser::block() {
     while (current->type != token_type::RIGHT_BRACE && current->type != token_type::END_OF_FILE) {
         declaration();
     }
+    fix_block_stack();
 }
 
 void parser::expression_statement() {

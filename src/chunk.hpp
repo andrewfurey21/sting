@@ -38,7 +38,9 @@ enum class opcode {
     MAKE_CLOSURE,
     GET_UPVALUE,
     SET_UPVALUE,
-    CLOSE_VALUE
+    CLOSE_VALUE,
+    SAVE_VALUE, // save and load to scratch value
+    LOAD_VALUE,
 };
 
 std::string opcode_to_string(opcode op);

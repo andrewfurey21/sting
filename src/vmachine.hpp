@@ -31,7 +31,7 @@ struct call_frame {
 };
 
 struct vmachine {
-    vmachine(const function& f) {
+    vmachine(const function& f) : call_frames(), value_stack(), scratch_value(), globals() {
         call_frame cf = call_frame(f);
         call_frames.push_back(cf);
     }
@@ -83,12 +83,6 @@ struct vmachine {
                         call_frames.pop_back();
                         return vm_result::OK;
                     }
-                    // save the returned value, delete all locals + params made by the call.
-                    const value v = value_stack.pop_back();
-                    for (u64 i = value_stack.size(); i > call_frames.back().bp; i--) {
-                        value_stack.pop_back();
-                    }
-                    value_stack.push_back(v);
                     call_frames.pop_back();
                     break;
                 }
@@ -244,6 +238,11 @@ struct vmachine {
                     break;
                 }
 
+                case opcode::CLOSE_VALUE: {
+                    panic("opcode::CLOSE_VALUE not implemented");
+                    break;
+                }
+
                 case opcode::DEFINE_GLOBAL: {
                     u32 index = current.operands.at(0);
                     const value& v = script().constant_pool.at(index);
@@ -321,6 +320,16 @@ struct vmachine {
                     break;
                 }
 
+                case opcode::SAVE_VALUE: {
+                    scratch_value = value_stack.pop_back();
+                    break;
+                }
+
+                case opcode::LOAD_VALUE: {
+                    value_stack.push_back(scratch_value);
+                    break;
+                }
+
                 default: {
                     std::stringstream errMessage;
                     errMessage << "Unknown opcode: " << static_cast<u64>(current.op);
@@ -338,6 +347,7 @@ struct vmachine {
 
     dynarray<call_frame> call_frames;
     dynarray<value> value_stack;
+    value scratch_value;
     hashmap<string, value> globals; // builtins get stored here too?
 };
 

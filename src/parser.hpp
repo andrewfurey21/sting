@@ -145,6 +145,7 @@ public:
     void declaration();
     void var_declaration();
     void fun_declaration();
+    void fix_block_stack();
     void declare_function_param();
     void declare_local_variable();
     void variable(bool assignable);

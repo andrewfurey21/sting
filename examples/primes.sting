@@ -22,10 +22,22 @@ fun print_primes_up_to(max) {
     }
 }
 
-var start = clock();
-print_primes_up_to(5);
-var end = clock();
+fun time_primes(max) {
+	var start = clock();
+	print_primes_up_to(5);
+	var end = clock();
+	return (end - start) / 1000;
+}
 
-print "Finished program in (seconds): ";
-print (end - start) / 1000;
+{
+
+    var max = 20;
+    var total = 0;
+    for (var i = 0; i < 100; i = i + 1) {
+        total = total + time_primes(max);
+    }
+    print "Average time: ";
+    print total / max;
+}
+
 
