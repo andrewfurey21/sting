@@ -21,10 +21,11 @@ public:
     u8 *cstr() const override;
     friend std::ostream& operator<<(std::ostream& os, const rtupvalue& c);
     static rtupvalue *new_upvalue(value * const v);
-    value * data() { return _data; }
+    value * data() const { return _data; }
 private:
     // points to somewhere on stack or object_list when the get closed
-    value *_data; // NOTE: _data not owned by upvalue.
+    value *_data; // NOTE: _data not owned by upvalue
+    // _data is only changed one after a variable gets closed.
 };
 
 class closure : public object {
@@ -47,7 +48,7 @@ public:
 private:
     function f;
     dynarray<rtupvalue*> _upvalues;
-    // NOTE: upvalues not owned by closure. tempted to make them const.
+    // NOTE: upvalues not owned by closure.
 };
 } // namespace sting
 

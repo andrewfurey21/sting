@@ -32,6 +32,7 @@ enum precedence {
 struct local {
     token name;
     i64 depth; // can have locals with same name, but different depths.
+    bool captured = false;
 
     bool operator==(const local& other) const {
         return name == other.name && depth == other.depth;
@@ -85,10 +86,15 @@ struct compiler {
         return resolve_upvalue(t, _locals.size() - 1);
     }
 
+    // maybe shift all upvalues to the left by one in _upvalues stack?
+    // first one isn't being used. would reduce all the "... - 1"
     i64 resolve_upvalue(const token& t, const i64 local_depth) {
         if (local_depth <= 0ll) return -1;
         const i64 l = resolve_local(t, _locals.at(local_depth - 1));
-        if (l != -1) return add_upvalue(_upvalues.at(local_depth), l, true);
+        if (l != -1) {
+            _locals.at(local_depth - 1).at(l).captured = true;
+            return add_upvalue(_upvalues.at(local_depth), l, true);
+        }
 
         const i64 u = resolve_upvalue(t, local_depth - 1);
         if (u != -1) return add_upvalue(_upvalues.at(local_depth), u, false);

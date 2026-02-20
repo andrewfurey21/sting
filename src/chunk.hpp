@@ -38,6 +38,7 @@ enum class opcode {
     MAKE_CLOSURE,
     GET_UPVALUE,
     SET_UPVALUE,
+    CLOSE_VALUE
 };
 
 std::string opcode_to_string(opcode op);

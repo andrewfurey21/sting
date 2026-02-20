@@ -16,8 +16,6 @@ enum class vtype {
     CLOSURE,
 };
 
-// TODO: shouldn't this be an object too? for gc.
-// or could implement custom new.
 class value : public object {
 public:
     value();
@@ -56,7 +54,7 @@ private:
     union {
         f32 f;
         u8 b;
-        object* o; // shared pointer?
+        object* o;
     };
 };
 

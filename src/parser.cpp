@@ -375,15 +375,16 @@ void parser::statement() {
         block();
         consume(token_type::RIGHT_BRACE, "Expected '}' after block");
 
-        u32 count = 0;
+        // u32 count = 0;
         while (c.locals().size() > 0 && c.locals().back().depth == c.scope_depth) {
-            count++;
+            // count++;
+            if (c.locals().back().captured) {
+                get_current_function().write_instruction(opcode::CLOSE_VALUE, prev->line, c.locals().size() - 1);
+            } else {
+                get_current_function().write_instruction(opcode::POP, prev->line);
+            }
             c.locals().pop_back();
         }
-        if (count == 1)
-            get_current_function().write_instruction(opcode::POP, prev->line);
-        else if (count > 1)
-            get_current_function().write_instruction(opcode::POPN, prev->line, count);
 
         c.scope_depth--;
     } else if (current->type == token_type::RETURN) {
