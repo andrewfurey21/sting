@@ -12,4 +12,4 @@ Currently very buggy and needs a rewrite. GC still needs to be implemented too.
 - [x] functions
 - [x] native functions
     - [x] clock
-- [ ] closures
+- [x] closures
