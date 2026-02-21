@@ -172,9 +172,6 @@ void parser::fun_declaration() {
         c.functions.back().write_instruction(opcode::RETURN, fn_line);
     }
 
-    // we cant pop off parameters statically atm because result will be on top of args.
-    // return opcode handles this using the base pointer.
-
     // TODO: needs to be its own helper function, anytime scope_depth--;
     while (c.locals().size() > 0 && c.locals().back().depth == c.scope_depth) {
         c.locals().pop_back();
@@ -324,7 +321,6 @@ void parser::named_variable(const token& tok_name, bool assignable) {
             expression();
             get_current_function().write_instruction(opcode::SET_LOCAL, prev->line, local);
         } else if ((upvalue = c.resolve_upvalue(*prev)) != -1) {
-            // sting::panic("set upvalue not implemented");
             get_next_token();
             expression();
             get_current_function().write_instruction(opcode::SET_UPVALUE, prev->line, upvalue);
@@ -340,7 +336,6 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         if (local != -1) {
             get_current_function().write_instruction(opcode::GET_LOCAL, prev->line, local);
         } else if ((upvalue = c.resolve_upvalue(*prev)) != -1) {
-            // sting::panic("get upvalue not implemented");
             get_current_function().write_instruction(opcode::GET_UPVALUE, prev->line, upvalue);
         }else {
             u64 global = parse_global_variable_name();
@@ -379,7 +374,7 @@ void parser::statement() {
         consume(token_type::LEFT_BRACE, "Expected '{' after block");
         block();
         // TODO: fix_block_stack();
-        // fix_block_stack();
+        fix_block_stack();
         consume(token_type::RIGHT_BRACE, "Expected '}' after block");
         c.scope_depth--;
     } else if (current->type == token_type::RETURN) {
@@ -499,7 +494,7 @@ void parser::block() {
 void parser::expression_statement() {
     expression();
     consume(token_type::SEMICOLON, "Expected ;");
-    get_current_function().write_instruction(opcode::POP, prev->line);
+    //get_current_function().write_instruction(opcode::POP, prev->line);
 }
 
 // should be able to escape quickly if token is just a semicolon.

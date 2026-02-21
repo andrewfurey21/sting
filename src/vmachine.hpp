@@ -92,18 +92,26 @@ struct vmachine {
             instruction const& current = call_frames.back().c.get_chunk().bytecode.at(*pc);
             call_frames.back().pc++;
 
+            // std::cout << "<" << value_stack.size() << ">" << "\n";
+            // std::cout << opcode_to_string(current.op) << ": ";
+
             switch(current.op) {
                 case opcode::RETURN: {
                     if (call_frames.size() == 1) {
-                        std::cout << "stack size: " << value_stack.size() << "\n";
-                        for (u64 i = 0; i < value_stack.size(); i++) {
-                            std::cout << i << ": " << value_stack.at(i) << "\n";
-                        }
+                        // std::cout << "stack size: " << value_stack.size() << "\n";
+                        // for (u64 i = 0; i < value_stack.size(); i++) {
+                        //     std::cout << i << ": " << value_stack.at(i) << "\n";
+                        // }
                         call_frames.pop_back();
                         return vm_result::OK;
                     }
 
                     // TODO: should be 1 if not script, else 0. fix this.
+                    const value v = value_stack.pop_back();
+                    for (u64 i = value_stack.size(); i > call_frames.back().bp; i--) {
+                        value_stack.pop_back();
+                    }
+                    value_stack.push_back(v);
                     call_frames.pop_back();
                     break;
                 }
@@ -112,8 +120,7 @@ struct vmachine {
                     // value_stack: arg1, arg2, arg3, fn, {}
                     // fn gets popped before execution.
                     const u64 num_args = current.operands.at(0);
-                    const value& callable = value_stack.back();
-                    const vtype type = callable.type;
+                    const value& callable = value_stack.pop_back();
                     call(callable, num_args);
                     break;
                 }
@@ -301,7 +308,7 @@ struct vmachine {
                     const string *name =static_cast<string*>(v.obj());
                     panic_if(!globals.contains(*name), "Cannot set undefined global");
 
-                    globals.at(*name) = value_stack.back();
+                    globals.at(*name) = value_stack.pop_back();
 
                     break;
                 }
@@ -314,7 +321,7 @@ struct vmachine {
 
                 case opcode::SET_LOCAL: {
                     const u32 index = current.operands.at(0) + call_frames.back().bp;
-                    value_stack.at(index) = value_stack.back();
+                    value_stack.at(index) = value_stack.pop_back();
                     break;
                 }
 
@@ -343,10 +350,11 @@ struct vmachine {
                     rtupvalue const * const uv =
                         call_frames.back().c.get_upvalues().at(upvalue_index);
 
+                    const u32 stack_index = uv->value_stack_index() + call_frames.back().bp;
                     if (uv->is_closed) {
                         value_stack.push_back(uv->closed);
                     } else {
-                        value_stack.push_back(value_stack.at(uv->value_stack_index()));
+                        value_stack.push_back(value_stack.at(stack_index));
                     }
 
                     break;
@@ -356,11 +364,13 @@ struct vmachine {
                     const u32 upvalue_index = current.operands.at(0);
                     rtupvalue * const uv =
                         call_frames.back().c.get_upvalues().at(upvalue_index);
+                    const u32 stack_index = uv->value_stack_index() + call_frames.back().bp;
                     if (uv->is_closed) {
-                        uv->closed = value_stack.back();
+                        uv->closed = value_stack.pop_back();
                     } else {
-                        value_stack.at(uv->value_stack_index()) = value_stack.back();
+                        value_stack.at(stack_index) = value_stack.pop_back();
                     }
+                    break;
                 }
 
                 case opcode::SAVE_VALUE: {

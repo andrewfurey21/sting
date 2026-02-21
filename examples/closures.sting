@@ -1,6 +1,5 @@
-
 fun z() {
-	var x = 10;
+    var x = 10;
     fun inc() {
         x = x + 1;
         print x;
@@ -13,4 +12,3 @@ var x = z();
 for (var i = 0; i < 10; i = i + 1) {
     x();
 }
-
