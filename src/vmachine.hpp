@@ -2,6 +2,7 @@
 #define VMACHINE_HPP
 
 #include "object.hpp"
+#include "parser.hpp"
 #include "utilities.hpp"
 #include "dynarray.hpp"
 #include "value.hpp"
@@ -31,7 +32,7 @@ struct call_frame {
 };
 
 struct vmachine {
-    vmachine(const function& f) : call_frames(), value_stack(), scratch_value(), globals() {
+    vmachine(const function& f) : call_frames(), value_stack(), return_slot(), globals(), open_upvalues(nullptr) {
         call_frame cf = call_frame(f);
         call_frames.push_back(cf);
     }
@@ -63,8 +64,26 @@ struct vmachine {
         }
     }
 
-    rtupvalue * capture_value(value * const v) {
-        return rtupvalue::new_upvalue(v);
+    rtupvalue * capture_value(const u64 value_stack_index) {
+        rtupvalue * previous = nullptr;
+        rtupvalue * current = open_upvalues;
+        while (current != nullptr && current->value_stack_index() > value_stack_index) {
+            previous = current;
+            current = current->next();
+        }
+
+        if (current != nullptr && current->value_stack_index() == value_stack_index) {
+            return current;
+        }
+
+        rtupvalue * uv = rtupvalue::new_upvalue(value_stack_index);
+        if (previous == nullptr) {
+            open_upvalues = uv;
+        } else {
+            previous->next() = uv;
+        }
+
+        return uv;
     }
 
     vm_result run_chunk() {
@@ -83,6 +102,8 @@ struct vmachine {
                         call_frames.pop_back();
                         return vm_result::OK;
                     }
+
+                    // TODO: should be 1 if not script, else 0. fix this.
                     call_frames.pop_back();
                     break;
                 }
@@ -91,7 +112,7 @@ struct vmachine {
                     // value_stack: arg1, arg2, arg3, fn, {}
                     // fn gets popped before execution.
                     const u64 num_args = current.operands.at(0);
-                    const value& callable = value_stack.pop_back();
+                    const value& callable = value_stack.back();
                     const vtype type = callable.type;
                     call(callable, num_args);
                     break;
@@ -117,7 +138,7 @@ struct vmachine {
                             // there is no upvalue for this local, so call capture_value
                             // makes a new upvalue and puts it in the current closure.
                             const u32 value_stack_index = index + bp;
-                            uv.push_back(capture_value(&value_stack.at(value_stack_index)));
+                            uv.push_back(capture_value(value_stack_index));
                         } else {
                             // the current frame is guaranteed to have an upvalue pointing
                             // to the data. if it doesn't exist, the compiler or runtime is broken somewhere.
@@ -239,7 +260,16 @@ struct vmachine {
                 }
 
                 case opcode::CLOSE_VALUE: {
-                    panic("opcode::CLOSE_VALUE not implemented");
+                    const u32 value_stack_index = value_stack.size() - 1;
+                    rtupvalue * const top = open_upvalues;
+                    top->is_closed = true;
+
+                    panic_if(value_stack_index != top->value_stack_index(), "stack indicies should be identical");
+
+                    open_upvalues = open_upvalues->next();
+                    top->next() = nullptr;
+
+                    top->closed = value_stack.pop_back();
                     break;
                 }
 
@@ -310,23 +340,36 @@ struct vmachine {
 
                 case opcode::GET_UPVALUE: {
                     const u32 upvalue_index = current.operands.at(0);
-                    value_stack.push_back(*call_frames.back().c.get_upvalues().at(upvalue_index)->data());
+                    rtupvalue const * const uv =
+                        call_frames.back().c.get_upvalues().at(upvalue_index);
+
+                    if (uv->is_closed) {
+                        value_stack.push_back(uv->closed);
+                    } else {
+                        value_stack.push_back(value_stack.at(uv->value_stack_index()));
+                    }
+
                     break;
                 }
 
                 case opcode::SET_UPVALUE: {
                     const u32 upvalue_index = current.operands.at(0);
-                    *call_frames.back().c.get_upvalues().at(upvalue_index)->data() = value_stack.back();
-                    break;
+                    rtupvalue * const uv =
+                        call_frames.back().c.get_upvalues().at(upvalue_index);
+                    if (uv->is_closed) {
+                        uv->closed = value_stack.back();
+                    } else {
+                        value_stack.at(uv->value_stack_index()) = value_stack.back();
+                    }
                 }
 
                 case opcode::SAVE_VALUE: {
-                    scratch_value = value_stack.pop_back();
+                    return_slot = value_stack.pop_back();
                     break;
                 }
 
                 case opcode::LOAD_VALUE: {
-                    value_stack.push_back(scratch_value);
+                    value_stack.push_back(return_slot);
                     break;
                 }
 
@@ -347,8 +390,11 @@ struct vmachine {
 
     dynarray<call_frame> call_frames;
     dynarray<value> value_stack;
-    value scratch_value;
+    value return_slot;
     hashmap<string, value> globals; // builtins get stored here too?
+
+    // not sorted.
+    rtupvalue * open_upvalues;
 };
 
 } // namespace sting

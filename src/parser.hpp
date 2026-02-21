@@ -8,6 +8,7 @@
 #include "object.hpp"
 #include "hashmap.hpp"
 #include "function.hpp"
+#include "native_function.hpp"
 
 /*
  *  Parsing + codegen
@@ -76,8 +77,13 @@ struct compiler {
     i64 add_upvalue(dynarray<upvalue>& upvalues, u64 index, bool local) {
         const upvalue uv = upvalue(index, local);
         for (u64 i = 0; i < upvalues.size(); i++) {
-            if (upvalues.at(i) == uv) return i;
+            if (upvalues.at(i) == uv) {
+                std::cout << "Old upvalue: " << index << ", " << local << "\n";
+                return i;
+            }
         }
+
+        std::cout << "New upvalue: " << index << ", " << local << "\n";
         upvalues.push_back(uv);
         return upvalues.size() - 1;
     }

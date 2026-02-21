@@ -29,15 +29,12 @@ fun time_primes(max) {
 	return (end - start) / 1000;
 }
 
-{
-
-    var max = 20;
-    var total = 0;
-    for (var i = 0; i < 100; i = i + 1) {
-        total = total + time_primes(max);
-    }
-    print "Average time: ";
-    print total / max;
+var max = 20;
+var total = 0;
+for (var i = 0; i < 100; i = i + 1) {
+    total = total + time_primes(max);
 }
+print "Average time: ";
+print total / max;
 
 

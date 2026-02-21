@@ -1,50 +1,16 @@
+{
 
-// {
-//     fun g() {
-//     	var x = 10;
-// 	fun h() {
-// 	    x = x + 1;
-// 	}
-// 	return h;
-//     }
-//     var y = g();
-//     y();
-// }
-
-fun print_primes_up_to(max) {
-    var i = 2;
-    while (i <= max) {
-        var start = 2;
-        var is_prime = true;
-        var factor = 0;
-        while (start < i and is_prime) {
-        	var result = i;
-    	while (result > 0) {
-    	    result = result - start;
-    	}
-    	if (result + 0.0001 > 0) {
-    	    is_prime = false;
-    	    factor = start;
-    	}
-    	start = start + 1;
-        }
-        i = i + 1;
+    fun z() {
+    	var x = 10;
+	fun inc() {
+	    print "INCREMENTING";
+            x = x + 1;
+	    print x;
+	}
+	return inc;
     }
+
+    var x = z();
+    x();
+    x();
 }
-
-fun time_primes(max) {
-    var start = clock();
-    print_primes_up_to(max);
-    var end = clock();
-    return (end - start) / 1000;
-}
-
-var max = 20;
-var total = 0;
-for (var i = 0; i < 100; i = i + 1) {
-    total = total + time_primes(max);
-}
-print "Average time to find primes < 100: ";
-print total / max;
-
-

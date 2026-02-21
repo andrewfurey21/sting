@@ -10,7 +10,8 @@ namespace sting {
 class rtupvalue: public object {
 public:
     rtupvalue();
-    rtupvalue(value * const v);
+    rtupvalue(const u64 v);
+    rtupvalue(rtupvalue * next);
     rtupvalue(const rtupvalue& other);
     rtupvalue(rtupvalue&& other);
     rtupvalue& operator=(const rtupvalue& other);
@@ -20,12 +21,15 @@ public:
     object *clone() const override;
     u8 *cstr() const override;
     friend std::ostream& operator<<(std::ostream& os, const rtupvalue& c);
-    static rtupvalue *new_upvalue(value * const v);
-    value * data() const { return _data; }
+    static rtupvalue *new_upvalue(const u64 v);
+    u64 value_stack_index() const { return _value_stack_index; }
+    rtupvalue * next() const { return _next; }
+    rtupvalue *& next() { return _next; } // TODO: this compiles? how different signature?
+    value closed;
+    bool is_closed = false;
 private:
-    // points to somewhere on stack or object_list when the get closed
-    value *_data; // NOTE: _data not owned by upvalue
-    // _data is only changed one after a variable gets closed.
+    u64 _value_stack_index;
+    rtupvalue * _next;
 };
 
 class closure : public object {

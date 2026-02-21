@@ -314,7 +314,6 @@ void parser::named_variable(const token& tok_name, bool assignable) {
         }
 
         get_current_function().write_instruction(opcode::CALL, fnline, num_args);
-        // call pops the function object off the stack.
     } else if (current->type == token_type::EQUAL) {
         panic_if(!assignable, "Cannot assign to this expression");
 
@@ -379,6 +378,8 @@ void parser::statement() {
         c.scope_depth++;
         consume(token_type::LEFT_BRACE, "Expected '{' after block");
         block();
+        // TODO: fix_block_stack();
+        // fix_block_stack();
         consume(token_type::RIGHT_BRACE, "Expected '}' after block");
         c.scope_depth--;
     } else if (current->type == token_type::RETURN) {

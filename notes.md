@@ -1,3 +1,90 @@
+
+# book
+
+1. where do closed variables go?
+2. when do we close variables?
+
+we always close them if theres an upvalue referencing the data.
+GC takes care of it if the closure is dead. checking adds complexity ig
+the author wasn't bothered with.
+
+## closed vs open
+
+`is_captured` bool to differentiate running `POP` and `CLOSE_VALUE` opcodes.
+
+### TODO:
+
+- [x] add an `is_captured` bool to local
+- [x] when writing pop instructions, check to see if it's captured. if it is `CLOSE_VALUE`.
+
+## tracking open upvalues
+
+if two closures reference the same variable, and are live outside of that
+variables enclosing function, then they should still reference the same
+variable on the heap, to keep the semantics when that variable was on the stack.
+
+instead of every rtupvalue pointing to a data, one points to a data and you
+form a linked list for every other rtupvalue that references the same variable.
+
+the book:
+doesn't this make getting the value of an upvalue slow? O(n) right?
+I don't think there should be that many upvalues. so not a big deal?
+
+me:
+my original idea was to just have rtupvalues point to the same thing.
+maybe that makes doing gc hard.
+
+### TODO
+1. Add a next member to rtupvalue. use these as a link list, where the root node
+has the data.
+
+2. In `capture_value`, loop through
+
+## closing upvalues at runtime
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # function call notes
 
 ## call frame
@@ -81,4 +168,3 @@ fun name(param1, param2, ...) {
 ```
 
 should not be able to use return outside of function definition.
-

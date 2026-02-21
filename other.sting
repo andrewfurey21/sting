@@ -1,0 +1,32 @@
+
+
+// test hoisting enclosed params to heap
+// merge this two examples as a test also.
+//{
+//    var x = 100;
+//    fun f(y) {
+//        fun g() {
+//	    print y;
+//	}
+//	return g;
+//    }
+//
+//    var g = f(10);
+//    g();
+//}
+// test returning two closures.
+// fun generator() {
+//     var x = 10;
+//     fun print_x() {
+//         print x;
+// 	x = x + 10;
+//     }
+// 
+//     print_x();
+//     return print_x;
+// }
+// 
+// var y = generator();
+// y();
+
+// test a closure with variable from for loop
